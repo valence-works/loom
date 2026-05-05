@@ -11,13 +11,13 @@ Loom is a lightweight .NET recipe engine for composing, provisioning, and config
 - `Loom.sln` - solution file for all projects.
 - `Directory.Build.props` - shared MSBuild settings. Nullable reference types, implicit usings, latest C# language version, and warnings-as-errors are enabled.
 - `Directory.Packages.props` - central NuGet package version management.
-- `src/Loom` - core library project targeting `net9.0`.
-- `tests/Loom.Tests` - xUnit test project targeting `net9.0`.
+- `src/Loom` - core library project targeting `net10.0`.
+- `tests/Loom.Tests` - xUnit test project targeting `net10.0`.
 - `.github/workflows/ci.yml` - CI build and test workflow.
 
 ## Required Tooling
 
-- Use the .NET 9 SDK or later.
+- Use the .NET 10 SDK or later.
 - Do not add per-project package versions when central package management is enabled. Add or update versions in `Directory.Packages.props`.
 
 ## Common Commands
