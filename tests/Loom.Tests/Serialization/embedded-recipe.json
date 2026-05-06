@@ -1,0 +1,9 @@
+{
+  "name": "embedded",
+  "steps": [
+    {
+      "id": "step",
+      "type": "record"
+    }
+  ]
+}

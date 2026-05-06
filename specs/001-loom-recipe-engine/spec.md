@@ -13,7 +13,7 @@
 - Q: Which serialized recipe file format is required in V1? -> A: JSON only.
 - Q: Should V1 validation stop at the first error or collect multiple diagnostics? -> A: Collect all practical diagnostics before execution, except fatal load or parse failures.
 - Q: How are steps identified when referenced by dependencies or previous-output interpolation? -> A: Step IDs are optional, but required when referenced by dependencies or previous-output interpolation.
-- Q: What is the default security posture for diagnostics and results containing recipe values? -> A: Diagnostics and results redact step input and variable values by default, showing only field names and locations.
+- Q: What is the default security posture for recipe diagnostics and run results containing recipe values? -> A: Recipe diagnostics and run results redact step input, variable, and handler output values by default, showing only field names and locations.
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -92,7 +92,7 @@ As an application developer or operator, I want structured execution events, dia
 **Acceptance Scenarios**:
 
 1. **Given** a recipe execution starts, **When** the runner begins processing, **Then** an execution-started event and timing information are available.
-2. **Given** a step fails, **When** the runner stops execution, **Then** the result includes completed steps, failed step details, preserved diagnostics, and error information with step input and variable values redacted by default.
+2. **Given** a step fails, **When** the runner stops execution, **Then** the result includes completed steps, failed step details, preserved diagnostics, and error information with step input, variable, and handler output values redacted by default.
 3. **Given** validation fails, **When** execution is requested, **Then** no steps execute and the result includes validation diagnostics.
 
 ---
@@ -123,7 +123,7 @@ As an application developer, I want recipes to support variables and simple V1 i
 - A step references a variable, expression, or previous output that does not exist; validation or evaluation reports a structured diagnostic with the unresolved reference.
 - A recipe source cannot load or parse a recipe; the load result reports source-specific diagnostics without crashing catalog discovery, and validation does not attempt deeper inspection of that invalid recipe.
 - Multiple recipe sources provide recipes with the same recipe name and optional version identity; catalog discovery reports deterministic conflict diagnostics and excludes the duplicated identity from executable discovery results until the conflict is resolved.
-- A validation or execution diagnostic relates to step input or variable values; diagnostics and results identify the affected field or location while redacting the value by default.
+- A validation or execution diagnostic relates to step input, variable, or handler output values; recipe diagnostics and run results identify the affected field or location while redacting the value by default.
 - A handler produces no output; later steps can still execute if they do not require that output.
 - A recipe uses a future extension property unknown to the current core; the core preserves or ignores extension data according to documented extensibility rules without blocking unrelated recipe behavior.
 
@@ -149,10 +149,10 @@ As an application developer, I want recipes to support variables and simple V1 i
 - **FR-014**: Loom MUST validate recipes before execution for required fields, unknown step types, missing handlers, invalid or duplicate referenced step IDs, invalid dependency references, invalid variable references, invalid interpolation references, and cyclic dependencies.
 - **FR-014a**: V1 validation MUST collect all practical diagnostics before execution when a recipe can be inspected, except fatal load or parse failures that prevent reliable inspection.
 - **FR-015**: Validation MUST produce structured diagnostics that identify the affected recipe, step, field, or reference where practical.
-- **FR-015a**: Diagnostics and results MUST redact step input values and variable values by default, while still showing affected field names, reference names, and locations needed for troubleshooting.
+- **FR-015a**: Recipe diagnostics and run results MUST redact step input values, variable values, handler output values, and unsafe exception details by default, while still showing affected field names, reference names, and locations needed for troubleshooting.
 - **FR-016**: Loom MUST expose observable execution events for recipe started, recipe completed, step started, step completed, step failed, and validation failed.
 - **FR-017**: Loom MUST expose understandable diagnostics for new execution behavior, including meaningful failure context.
-- **FR-018**: Loom MUST expose timing information and execution summaries without depending on a specific telemetry provider and without exposing step input or variable values by default.
+- **FR-018**: Loom MUST expose timing information and execution summaries without depending on a specific telemetry provider and without exposing step input, variable, or handler output values by default.
 - **FR-019**: Loom MUST allow recipes to define variables with static values and runtime overrides.
 - **FR-020**: Loom MUST allow recipe values to use an optional V1 interpolation model for recipe variables and previous step outputs referenced by step ID.
 - **FR-021**: Loom MUST treat generated values, environment-specific values, conditional evaluation, date/time generation, configuration lookup, and custom expression functions or providers as research and future-extension capabilities, not V1 execution requirements.
@@ -181,12 +181,12 @@ As an application developer, I want recipes to support variables and simple V1 i
 - **Recipe**: A declarative definition of repeatable application composition work. Key attributes include name, description, version, metadata, variables, steps, validation-only dependency metadata, and configuration values. The V1 identity is recipe name plus optional version; a missing version represents one unversioned identity for that name.
 - **Recipe Step**: A single operation within a recipe. Key attributes include optional step ID, step type, input data, optional validation-only dependencies, and execution status. Step IDs are required only when referenced by dependency metadata or previous-output interpolation, and referenced step IDs must be unique within the recipe.
 - **Step Handler**: Host-provided behavior that validates and executes steps of a specific type. Key attributes include supported step type, validation behavior, execution behavior, and produced outputs.
-- **Recipe Runner**: The coordinator responsible for validation, handler resolution, execution flow, context propagation, diagnostics, events, and result collection.
-- **Execution Context**: Shared per-run state available to steps. Key attributes include variables, step outputs, host services, cancellation state, execution metadata, diagnostics, and logging abstractions.
-- **Recipe Result**: Structured outcome of a recipe run. Key attributes include overall status, validation diagnostics, completed steps, failed steps, errors, cancellation state, and timing information.
+- **Recipe Engine**: The public coordinator responsible for validation, handler resolution, execution flow, context propagation, recipe diagnostics, events, and run result collection. Loom is the product/namespace name; public domain types should not repeat the brand name.
+- **Recipe Execution Context**: Shared per-run state available to steps. Key attributes include variables, step outputs, host services, cancellation state, execution metadata, diagnostics, and logging abstractions. The recipe prefix avoids ambiguity with .NET's built-in execution context concepts.
+- **Recipe Run Result**: Structured outcome of a recipe run. Key attributes include overall status, validation diagnostics, completed steps, failed steps, errors, cancellation state, and timing information.
 - **Recipe Catalog**: Discoverable collection of recipes aggregated from one or more recipe sources. Key attributes include source list, recipe identities, source metadata, and discovery diagnostics.
 - **Recipe Source**: Provider that loads recipes from a specific location or representation. Key attributes include source identity, supported discovery behavior, loaded recipes, and load diagnostics. V1 serialized sources load JSON only.
-- **Diagnostic**: Structured validation, loading, or execution message. Key attributes include severity, code, message, affected target, and optional exception details. Diagnostics identify fields and locations while redacting step input and variable values by default.
+- **Recipe Diagnostic**: Structured validation, loading, catalog, or execution message. Key attributes include severity, code, message, affected target, and optional sanitized exception details. Recipe diagnostics identify fields and locations while redacting step input, variable, handler output, and unsafe exception details by default.
 - **Expression Function or Provider**: Future host-extensible capability that may resolve dynamic recipe values beyond V1 interpolation. Key attributes include name, input contract, evaluation behavior, and safety constraints.
 
 ## Success Criteria *(mandatory)*
@@ -203,7 +203,7 @@ As an application developer, I want recipes to support variables and simple V1 i
 - **SC-008**: A developer can add a custom step type and handler without modifying the core engine in 100% of documented extension examples.
 - **SC-009**: Expression and runner research produce documented recommendations and trade-offs before implementation planning is considered complete, while V1 implementation remains limited to variable and previous-output interpolation.
 - **SC-010**: The initial delivery supports the listed V1 scenarios without introducing required concepts for workflow orchestration, durable execution, rollback, scheduling, or distributed coordination.
-- **SC-011**: 100% of diagnostic and result examples involving step input or variable values redact those values by default while preserving field names or locations for troubleshooting.
+- **SC-011**: 100% of diagnostic and result examples involving step input, variable, handler output, or exception details redact unsafe values by default while preserving field names or locations for troubleshooting.
 
 ## Assumptions
 
@@ -215,5 +215,5 @@ As an application developer, I want recipes to support variables and simple V1 i
 - V1 serialized recipes are JSON documents expected to be readable, source-control friendly, and suitable for automation scenarios.
 - The initial expression capability is limited to variable interpolation and previous-output interpolation by step ID; generated values, environment lookup, conditionals, date/time helpers, configuration lookup, and custom providers require research before becoming implementation scope.
 - Host applications remain responsible for security-sensitive concerns such as secrets, credentials, permissions, tenant isolation, and access control.
-- Loom diagnostics and results default to redacting recipe variable values and step input values; hosts may design separate explicit disclosure mechanisms later, but disclosure is not a V1 default.
+- Recipe diagnostics and run results default to redacting recipe variable values, step input values, handler output values, and unsafe exception details; hosts may design separate explicit disclosure mechanisms later, but disclosure is not a V1 default.
 - The core engine remains independent from specific application frameworks, workflow engines, telemetry vendors, infrastructure providers, and domain models.

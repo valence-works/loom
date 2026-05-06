@@ -11,6 +11,10 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{0AB3BF05
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Loom.Tests", "tests\Loom.Tests\Loom.Tests.csproj", "{676EBF90-25FB-4B26-9F53-5FB07AB52FD3}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "samples", "samples", "{5D20AA90-6969-D8BD-9DCD-8634F4692FDA}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Loom.Sample", "samples\Loom.Sample\Loom.Sample.csproj", "{E280B411-938B-4C69-9194-72C9B2ED8317}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -45,6 +49,18 @@ Global
 		{676EBF90-25FB-4B26-9F53-5FB07AB52FD3}.Release|x64.Build.0 = Release|Any CPU
 		{676EBF90-25FB-4B26-9F53-5FB07AB52FD3}.Release|x86.ActiveCfg = Release|Any CPU
 		{676EBF90-25FB-4B26-9F53-5FB07AB52FD3}.Release|x86.Build.0 = Release|Any CPU
+		{E280B411-938B-4C69-9194-72C9B2ED8317}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E280B411-938B-4C69-9194-72C9B2ED8317}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E280B411-938B-4C69-9194-72C9B2ED8317}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{E280B411-938B-4C69-9194-72C9B2ED8317}.Debug|x64.Build.0 = Debug|Any CPU
+		{E280B411-938B-4C69-9194-72C9B2ED8317}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{E280B411-938B-4C69-9194-72C9B2ED8317}.Debug|x86.Build.0 = Debug|Any CPU
+		{E280B411-938B-4C69-9194-72C9B2ED8317}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E280B411-938B-4C69-9194-72C9B2ED8317}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E280B411-938B-4C69-9194-72C9B2ED8317}.Release|x64.ActiveCfg = Release|Any CPU
+		{E280B411-938B-4C69-9194-72C9B2ED8317}.Release|x64.Build.0 = Release|Any CPU
+		{E280B411-938B-4C69-9194-72C9B2ED8317}.Release|x86.ActiveCfg = Release|Any CPU
+		{E280B411-938B-4C69-9194-72C9B2ED8317}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -52,5 +68,6 @@ Global
 	GlobalSection(NestedProjects) = preSolution
 		{08AF71F0-F19C-495A-A66A-C0FB7A5C983F} = {827E0CD3-B72D-47B6-A68D-7590B98EB39B}
 		{676EBF90-25FB-4B26-9F53-5FB07AB52FD3} = {0AB3BF05-4346-4AA6-1389-037BE0695223}
+		{E280B411-938B-4C69-9194-72C9B2ED8317} = {5D20AA90-6969-D8BD-9DCD-8634F4692FDA}
 	EndGlobalSection
 EndGlobal

@@ -1,0 +1,24 @@
+{
+  "name": "Initial Setup",
+  "version": "1.0.0",
+  "variables": {
+    "tenant": "acme"
+  },
+  "steps": [
+    {
+      "id": "capture-tenant",
+      "type": "capture",
+      "input": {
+        "value": "{{ variables.tenant }}"
+      }
+    },
+    {
+      "id": "print-summary",
+      "type": "print",
+      "dependsOn": [ "capture-tenant" ],
+      "input": {
+        "message": "Configured tenant {{ steps.capture-tenant.value }}"
+      }
+    }
+  ]
+}
