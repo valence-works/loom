@@ -45,7 +45,7 @@ var result = await engine.RunAsync(catalog.Recipes.Single());
 - `IRecipeSerializer`: Format-specific parser for JSON, YAML, or future recipe formats.
 - `IRecipeSource`: Provider for in-memory, file system, embedded resource, or future recipe locations.
 - `RecipeDiagnostic`: Structured validation, loading, catalog, or execution message.
-- V1 interpolation: Human-readable `{{ variables.name }}` and `{{ steps.stepId.output }}` references.
+- Interpolation providers: Host-registered `[prefix: expression]` providers such as the optional Jint-backed `js` provider.
 
 ## Project Structure
 
@@ -57,6 +57,7 @@ var result = await engine.RunAsync(catalog.Recipes.Single());
   /src
     /Loom.Abstractions        # Contracts and models for handler/source authors
     /Loom                     # Recipe engine runtime
+    /Loom.Interpolation.Jint  # Optional Jint-backed interpolation provider
     /Loom.Serialization.Json  # JSON recipe serialization
     /Loom.Sources.Embedded    # Embedded resource recipe sources
     /Loom.Sources.FileSystem  # File system recipe sources
