@@ -14,6 +14,7 @@ public sealed class DependencyValidationTests
         var diagnostics = await engine.ValidateAsync(recipe, cancellationToken: TestContext.Current.CancellationToken);
 
         Assert.Contains(diagnostics, diagnostic => diagnostic.Code == "LOOM_DEPENDENCY_UNKNOWN");
+        Assert.Contains(diagnostics, diagnostic => diagnostic.Code == "LOOM_DEPENDENCY_FORWARD");
         Assert.Contains(diagnostics, diagnostic => diagnostic.Code == "LOOM_DEPENDENCY_CYCLE");
     }
 

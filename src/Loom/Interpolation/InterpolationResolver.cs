@@ -23,13 +23,19 @@ internal static partial class InterpolationResolver
         IReadOnlyDictionary<string, JsonNode?> variables)
     {
         List<RecipeDiagnostic> diagnostics = [];
-        HashSet<string> stepIds = recipe.Steps.Where(step => step.Id is not null).Select(step => step.Id!).ToHashSet(StringComparer.Ordinal);
+        var stepIds = recipe.Steps.Where(step => step.Id is not null).Select(step => step.Id!).ToHashSet(StringComparer.Ordinal);
+        var precedingStepIds = new HashSet<string>(StringComparer.Ordinal);
 
         foreach (var step in recipe.Steps)
         {
             foreach (var reference in FindReferences(step.Input))
             {
-                ValidateReference(reference, variables, stepIds, step, diagnostics);
+                ValidateReference(reference, variables, stepIds, precedingStepIds, step, diagnostics);
+            }
+
+            if (step.Id is not null)
+            {
+                precedingStepIds.Add(step.Id);
             }
         }
 
@@ -160,6 +166,7 @@ internal static partial class InterpolationResolver
         InterpolationReference reference,
         IReadOnlyDictionary<string, JsonNode?> variables,
         HashSet<string> stepIds,
+        HashSet<string> precedingStepIds,
         RecipeStep step,
         List<RecipeDiagnostic> diagnostics)
     {
@@ -179,6 +186,13 @@ internal static partial class InterpolationResolver
         if (reference.Kind == InterpolationReferenceKind.StepOutput && !stepIds.Contains(reference.Source))
         {
             diagnostics.Add(RecipeDiagnosticFactory.Error("LOOM_STEP_OUTPUT_UNKNOWN", $"Unknown step output reference '{reference.Source}'.", Target(step, "input")));
+        }
+
+        if (reference.Kind == InterpolationReferenceKind.StepOutput
+            && stepIds.Contains(reference.Source)
+            && !precedingStepIds.Contains(reference.Source))
+        {
+            diagnostics.Add(RecipeDiagnosticFactory.Error("LOOM_STEP_OUTPUT_FORWARD", $"Step output reference '{reference.Source}' must refer to an earlier step.", Target(step, "input")));
         }
     }
 

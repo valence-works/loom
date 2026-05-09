@@ -69,7 +69,7 @@ Example JSON recipe:
 
 Notes:
 
-- `dependsOn` is validation-only metadata in V1.
+- `dependsOn` is validation-only metadata in V1 and must reference earlier steps.
 - Steps execute in declared order.
 - Step IDs are required when a step is referenced.
 - Diagnostics/results redact `input` and variable values by default.

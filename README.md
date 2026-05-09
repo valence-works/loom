@@ -36,7 +36,7 @@ var result = await engine.RunAsync(catalog.Recipes.Single());
 ## Public Concepts
 
 - `Recipe`: Declarative definition with identity, variables, and ordered steps.
-- `RecipeStep`: A typed unit of work with optional ID, input, and validation-only dependencies.
+- `RecipeStep`: A typed unit of work with optional ID, input, and dependencies that must point to earlier steps.
 - `IRecipeStepHandler`: Host-owned validation and execution behavior for one step type.
 - `RecipeEngine`: Public coordinator for sources, validation, handler resolution, and execution.
 - `RecipeExecutionContext`: Per-run context with variables, outputs, services, diagnostics, and run metadata.

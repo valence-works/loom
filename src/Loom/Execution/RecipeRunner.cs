@@ -73,8 +73,8 @@ internal sealed class RecipeRunner(StepHandlerRegistry handlers)
                 diagnostics.Add(diagnostic);
                 var failedStep = new FailedRecipeStep(step.Id, step.Type, DiagnosticRedactor.Sanitize(exception));
                 var completedAt = DateTimeOffset.UtcNow;
-                await PublishAsync(options, new RecipeExecutionEvent(RecipeExecutionEventKind.StepFailed, completedAt, recipe.Identity, step.Id, step.Type, Message: diagnostic.Message), cancellationToken).ConfigureAwait(false);
-                await PublishAsync(options, new RecipeExecutionEvent(RecipeExecutionEventKind.RecipeCompleted, completedAt, recipe.Identity, Status: RecipeRunStatus.ExecutionFailed), cancellationToken).ConfigureAwait(false);
+                await PublishAsync(options, new RecipeExecutionEvent(RecipeExecutionEventKind.StepFailed, completedAt, recipe.Identity, step.Id, step.Type, Message: diagnostic.Message), CancellationToken.None).ConfigureAwait(false);
+                await PublishAsync(options, new RecipeExecutionEvent(RecipeExecutionEventKind.RecipeCompleted, completedAt, recipe.Identity, Status: RecipeRunStatus.ExecutionFailed), CancellationToken.None).ConfigureAwait(false);
                 return new RecipeRunResult(RecipeRunStatus.ExecutionFailed, diagnostics, completedSteps, failedStep, failedStep.Reason, startedAt, completedAt);
             }
         }

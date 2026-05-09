@@ -5,21 +5,17 @@ internal static class DependencyValidator
     public static IReadOnlyList<RecipeDiagnostic> Validate(Recipe recipe)
     {
         List<RecipeDiagnostic> diagnostics = [];
-        var referencedIds = recipe.Steps.SelectMany(step => step.DependsOn ?? []).ToHashSet(StringComparer.Ordinal);
         var ids = new HashSet<string>(StringComparer.Ordinal);
 
         foreach (var step in recipe.Steps)
         {
-            if (step.Id is not null && referencedIds.Contains(step.Id) && !ids.Add(step.Id))
+            if (step.Id is not null && !ids.Add(step.Id))
             {
-                diagnostics.Add(RecipeDiagnosticFactory.Error("LOOM_STEP_ID_DUPLICATE", $"Referenced step ID '{step.Id}' must be unique.", $"step:{step.Id}"));
-            }
-            else if (step.Id is not null)
-            {
-                ids.Add(step.Id);
+                diagnostics.Add(RecipeDiagnosticFactory.Error("LOOM_STEP_ID_DUPLICATE", $"Step ID '{step.Id}' must be unique.", $"step:{step.Id}"));
             }
         }
 
+        var precedingIds = new HashSet<string>(StringComparer.Ordinal);
         foreach (var step in recipe.Steps)
         {
             foreach (var dependency in step.DependsOn ?? [])
@@ -32,6 +28,15 @@ internal static class DependencyValidator
                 {
                     diagnostics.Add(RecipeDiagnosticFactory.Error("LOOM_DEPENDENCY_UNKNOWN", $"Unknown dependency '{dependency}'.", Target(step, "dependsOn")));
                 }
+                else if (!precedingIds.Contains(dependency))
+                {
+                    diagnostics.Add(RecipeDiagnosticFactory.Error("LOOM_DEPENDENCY_FORWARD", $"Dependency '{dependency}' must be declared before the dependent step.", Target(step, "dependsOn")));
+                }
+            }
+
+            if (step.Id is not null)
+            {
+                precedingIds.Add(step.Id);
             }
         }
 
