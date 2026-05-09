@@ -22,6 +22,31 @@ dotnet build
 dotnet test
 ```
 
+### Minimal Usage
+
+```csharp
+var engine = RecipeEngine.Create()
+    .RegisterHandler(new MyStepHandler())
+    .AddSource(new FileRecipeSource("recipe.json", new JsonRecipeSerializer()));
+
+var catalog = await engine.DiscoverAsync();
+var result = await engine.RunAsync(catalog.Recipes.Single());
+```
+
+## Public Concepts
+
+- `Recipe`: Declarative definition with identity, variables, and ordered steps.
+- `RecipeStep`: A typed unit of work with optional ID, input, and dependencies that must point to earlier steps.
+- `IRecipeStepHandler`: Host-owned validation and execution behavior for one step type.
+- `RecipeEngine`: Public coordinator for sources, validation, handler resolution, and execution.
+- `RecipeExecutionContext`: Per-run context with variables, outputs, services, diagnostics, and run metadata.
+- `RecipeRunResult`: Safe structured status, timing, completed steps, failed step, and diagnostics.
+- `RecipeCatalog`: Aggregated discoverable recipes with duplicate identity diagnostics.
+- `IRecipeSerializer`: Format-specific parser for JSON, YAML, or future recipe formats.
+- `IRecipeSource`: Provider for in-memory, file system, embedded resource, or future recipe locations.
+- `RecipeDiagnostic`: Structured validation, loading, catalog, or execution message.
+- V1 interpolation: Human-readable `{{ variables.name }}` and `{{ steps.stepId.output }}` references.
+
 ## Project Structure
 
 ```
@@ -30,7 +55,14 @@ dotnet test
   Directory.Build.props       # Common MSBuild settings
   Directory.Packages.props    # Central package management
   /src
-    /Loom                     # Core library
+    /Loom.Abstractions        # Contracts and models for handler/source authors
+    /Loom                     # Recipe engine runtime
+    /Loom.Serialization.Json  # JSON recipe serialization
+    /Loom.Sources.Embedded    # Embedded resource recipe sources
+    /Loom.Sources.FileSystem  # File system recipe sources
+    /Loom.Sources.InMemory    # In-memory recipe sources
+  /samples
+    /Loom.Sample              # Minimal console host
   /tests
     /Loom.Tests               # Unit tests
 ```

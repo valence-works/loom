@@ -58,3 +58,10 @@ dotnet test --no-build --configuration Release
 - Do not make unrelated formatting-only changes while implementing functional changes.
 - Update `README.md` when user-facing commands, project structure, or behavior changes.
 - Preserve the MIT license header and project licensing assumptions.
+
+## Active Technologies
+- C# latest, .NET 10 (`net10.0`) + .NET base libraries and `System.Text.Json`; optional standard DI abstractions only if needed for host-controlled scoped handler/service integration (001-loom-recipe-engine)
+- N/A for engine state; JSON recipe files and embedded JSON resources for recipe source inputs (001-loom-recipe-engine)
+
+## Recent Changes
+- 001-loom-recipe-engine: Added C# latest, .NET 10 (`net10.0`) + .NET base libraries and `System.Text.Json`; optional standard DI abstractions only if needed for host-controlled scoped handler/service integration
