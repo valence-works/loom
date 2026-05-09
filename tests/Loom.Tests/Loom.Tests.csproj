@@ -22,6 +22,10 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\Loom\Loom.csproj" />
+    <ProjectReference Include="..\..\src\Loom.Serialization.Json\Loom.Serialization.Json.csproj" />
+    <ProjectReference Include="..\..\src\Loom.Sources.Embedded\Loom.Sources.Embedded.csproj" />
+    <ProjectReference Include="..\..\src\Loom.Sources.FileSystem\Loom.Sources.FileSystem.csproj" />
+    <ProjectReference Include="..\..\src\Loom.Sources.InMemory\Loom.Sources.InMemory.csproj" />
   </ItemGroup>
 
 </Project>

@@ -1,6 +1,6 @@
 namespace Loom.Tests.Serialization;
 
-public sealed class JsonRecipeFileSourceTests : IAsyncDisposable
+public sealed class FileRecipeSourceTests : IAsyncDisposable
 {
     private readonly string _path = Path.Combine(Path.GetTempPath(), $"{Guid.NewGuid():N}.json");
 
@@ -16,7 +16,7 @@ public sealed class JsonRecipeFileSourceTests : IAsyncDisposable
               ]
             }
             """, TestContext.Current.CancellationToken);
-        var source = new JsonFileRecipeSource(_path, "file");
+        var source = new FileRecipeSource(_path, new JsonRecipeSerializer(), "file");
 
         var result = await source.LoadAsync(TestContext.Current.CancellationToken);
 

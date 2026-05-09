@@ -3,7 +3,7 @@ using System.Text.Json.Nodes;
 
 namespace Loom;
 
-public static class JsonRecipeSerializer
+public sealed class JsonRecipeSerializer : IRecipeSerializer
 {
     private static readonly HashSet<string> KnownRecipeProperties = new(StringComparer.OrdinalIgnoreCase)
     {
@@ -15,7 +15,21 @@ public static class JsonRecipeSerializer
         "id", "type", "dependsOn", "input"
     };
 
-    public static Recipe Deserialize(string json)
+    public string Format => "json";
+
+    public Recipe Deserialize(string content)
+    {
+        try
+        {
+            return DeserializeJson(content);
+        }
+        catch (JsonException exception)
+        {
+            throw new RecipeSerializationException("Could not deserialize JSON recipe.", exception);
+        }
+    }
+
+    private static Recipe DeserializeJson(string json)
     {
         var node = JsonNode.Parse(json, nodeOptions: null, documentOptions: default) as JsonObject
             ?? throw new JsonException("Recipe JSON must be an object.");

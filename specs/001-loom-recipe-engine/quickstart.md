@@ -19,7 +19,8 @@ The handler should:
 Configure Loom with:
 
 - Custom step handlers.
-- In-memory recipes, JSON file sources, or embedded JSON resource sources.
+- In-memory recipes, file system sources, or embedded resource sources.
+- JSON recipe serialization, or future serializers such as YAML.
 - Optional diagnostic/event observers.
 
 The host remains responsible for its own service registration and service lifetimes.
@@ -29,7 +30,7 @@ Representative public API shape:
 ```csharp
 var engine = RecipeEngine.Create()
     .RegisterHandler(new CreateUserHandler())
-    .AddSource(new JsonFileRecipeSource("initial-setup.json"));
+    .AddSource(new FileRecipeSource("initial-setup.json", new JsonRecipeSerializer()));
 
 var catalog = await engine.DiscoverAsync();
 var result = await engine.RunAsync(catalog.Recipes.Single());
@@ -120,7 +121,8 @@ Result and diagnostic values should be safe to log by default because step input
 - `RecipeExecutionContext`: Per-run state available to handlers, including variables, outputs, services, diagnostics, and run metadata.
 - `RecipeRunResult`: Structured outcome with status, timing, completed steps, failed step, and safe diagnostics.
 - `RecipeCatalog`: Discoverable recipes aggregated from configured recipe sources.
-- `IRecipeSource`: Pluggable provider for in-memory, JSON file, embedded resource, or future recipe inputs.
+- `IRecipeSerializer`: Pluggable parser for JSON, YAML, or future recipe formats.
+- `IRecipeSource`: Pluggable provider for in-memory, file system, embedded resource, or future recipe inputs.
 - `RecipeDiagnostic`: Structured validation, loading, catalog, or execution message.
 - V1 interpolation: Human-readable variable and previous-output references using `{{ variables.name }}` and `{{ steps.stepId.output }}`.
 

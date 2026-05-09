@@ -2,15 +2,8 @@ using System.Diagnostics;
 
 namespace Loom;
 
-internal sealed class RecipeRunner
+internal sealed class RecipeRunner(StepHandlerRegistry handlers)
 {
-    private readonly StepHandlerRegistry _handlers;
-
-    public RecipeRunner(StepHandlerRegistry handlers)
-    {
-        _handlers = handlers;
-    }
-
     public async ValueTask<RecipeRunResult> RunAsync(
         Recipe recipe,
         RecipeRunOptions? options = null,
@@ -28,7 +21,7 @@ internal sealed class RecipeRunner
             VariableOverrides = options?.VariableOverrides,
             Services = options?.Services
         };
-        var validator = new RecipeValidator(_handlers);
+        var validator = new RecipeValidator(handlers);
         diagnostics.AddRange(await validator.ValidateAsync(recipe, validationOptions, cancellationToken).ConfigureAwait(false));
         if (diagnostics.Any(diagnostic => diagnostic.IsError))
         {
@@ -44,7 +37,7 @@ internal sealed class RecipeRunner
         foreach (var step in recipe.Steps)
         {
             cancellationToken.ThrowIfCancellationRequested();
-            if (!_handlers.TryGet(step.Type, out var handler))
+            if (!handlers.TryGet(step.Type, out var handler))
             {
                 continue;
             }

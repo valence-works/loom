@@ -6,7 +6,7 @@ var recipePath = Path.Combine(AppContext.BaseDirectory, "Recipes", "initial-setu
 var engine = RecipeEngine.Create()
     .RegisterHandler(new CaptureStepHandler())
     .RegisterHandler(new PrintStepHandler())
-    .AddSource(new JsonFileRecipeSource(recipePath, "sample-file"));
+    .AddSource(new FileRecipeSource(recipePath, new JsonRecipeSerializer(), "sample-file"));
 
 var catalog = await engine.DiscoverAsync();
 foreach (var diagnostic in catalog.Diagnostics)

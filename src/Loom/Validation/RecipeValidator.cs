@@ -1,14 +1,7 @@
 namespace Loom;
 
-internal sealed class RecipeValidator
+internal sealed class RecipeValidator(StepHandlerRegistry handlers)
 {
-    private readonly StepHandlerRegistry _handlers;
-
-    public RecipeValidator(StepHandlerRegistry handlers)
-    {
-        _handlers = handlers;
-    }
-
     public async ValueTask<IReadOnlyList<RecipeDiagnostic>> ValidateAsync(
         Recipe recipe,
         RecipeValidationOptions? options = null,
@@ -24,7 +17,7 @@ internal sealed class RecipeValidator
         var context = new RecipeValidationContext(recipe, variables, options?.Services);
         foreach (var step in recipe.Steps.Where(step => !string.IsNullOrWhiteSpace(step.Type)))
         {
-            if (!_handlers.TryGet(step.Type, out var handler))
+            if (!handlers.TryGet(step.Type, out var handler))
             {
                 diagnostics.Add(RecipeDiagnosticFactory.Error("LOOM_HANDLER_MISSING", $"No handler registered for step type '{step.Type}'.", Target(step, "type")));
                 continue;
