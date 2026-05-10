@@ -46,7 +46,7 @@ public sealed class JintRecipeInterpolationProvider : IRecipeInterpolationProvid
     {
         cancellationToken.ThrowIfCancellationRequested();
 
-        var engine = new Engine(options => options.LimitRecursion(32));
+        var engine = new Engine(options => options.LimitRecursion(32).CancellationToken(cancellationToken));
         engine.SetValue("variables", new Func<string, object?>(name =>
         {
             if (!context.Variables.TryGetValue(name, out var value))
@@ -60,6 +60,7 @@ public sealed class JintRecipeInterpolationProvider : IRecipeInterpolationProvid
         {
             if (validateOnly)
             {
+                ValidateStepOutputReference(context, stepId);
                 return null;
             }
 
@@ -76,7 +77,71 @@ public sealed class JintRecipeInterpolationProvider : IRecipeInterpolationProvid
 
     private static object? ToClrValue(JsonNode? node)
     {
-        return node?.Deserialize<object>();
+        return node switch
+        {
+            null => null,
+            JsonObject jsonObject => jsonObject.ToDictionary(property => property.Key, property => ToClrValue(property.Value)),
+            JsonArray jsonArray => jsonArray.Select(ToClrValue).ToArray(),
+            JsonValue jsonValue => ToScalarValue(jsonValue),
+            _ => node.Deserialize<object?>()
+        };
+    }
+
+    private static object? ToScalarValue(JsonValue value)
+    {
+        return value.GetValueKind() switch
+        {
+            JsonValueKind.Null => null,
+            JsonValueKind.String => value.GetValue<string>(),
+            JsonValueKind.True => true,
+            JsonValueKind.False => false,
+            JsonValueKind.Number when value.TryGetValue<int>(out var integer) => integer,
+            JsonValueKind.Number when value.TryGetValue<long>(out var longValue) => longValue,
+            JsonValueKind.Number when value.TryGetValue<decimal>(out var decimalValue) => decimalValue,
+            JsonValueKind.Number when value.TryGetValue<double>(out var doubleValue) => doubleValue,
+            _ => value.Deserialize<object?>()
+        };
+    }
+
+    private static void ValidateStepOutputReference(RecipeInterpolationContext context, string stepId)
+    {
+        var referencedIndex = FindStepIndex(context.Recipe, stepId);
+        if (referencedIndex < 0)
+        {
+            throw new InvalidOperationException($"Unknown step output '{stepId}'.");
+        }
+
+        var currentIndex = FindStepIndex(context.Recipe, context.Step);
+        if (currentIndex >= 0 && referencedIndex >= currentIndex)
+        {
+            throw new InvalidOperationException($"Step output '{stepId}' must refer to an earlier step.");
+        }
+    }
+
+    private static int FindStepIndex(Recipe recipe, string stepId)
+    {
+        for (var index = 0; index < recipe.Steps.Count; index++)
+        {
+            if (StringComparer.Ordinal.Equals(recipe.Steps[index].Id, stepId))
+            {
+                return index;
+            }
+        }
+
+        return -1;
+    }
+
+    private static int FindStepIndex(Recipe recipe, RecipeStep step)
+    {
+        for (var index = 0; index < recipe.Steps.Count; index++)
+        {
+            if (ReferenceEquals(recipe.Steps[index], step) || recipe.Steps[index] == step)
+            {
+                return index;
+            }
+        }
+
+        return -1;
     }
 
     private static JsonNode? ToJsonNode(object? value)

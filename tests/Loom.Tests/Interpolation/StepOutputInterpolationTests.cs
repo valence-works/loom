@@ -28,7 +28,7 @@ public sealed class StepOutputInterpolationTests
 
         var result = await engine.RunAsync(recipe, cancellationToken: TestContext.Current.CancellationToken);
 
-        Assert.Equal(RecipeRunStatus.ExecutionFailed, result.Status);
-        Assert.Contains(result.Diagnostics, diagnostic => diagnostic.Code == "LOOM_INTERPOLATION_PROVIDER_FAILED");
+        Assert.Equal(RecipeRunStatus.ValidationFailed, result.Status);
+        Assert.Contains(result.Diagnostics, diagnostic => diagnostic.Code == "LOOM_INTERPOLATION_PROVIDER_INVALID");
     }
 }

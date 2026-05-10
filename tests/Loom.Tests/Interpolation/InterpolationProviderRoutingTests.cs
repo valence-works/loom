@@ -59,6 +59,20 @@ public sealed class InterpolationProviderRoutingTests
         Assert.Equal("static", handler.Contexts[1].Step.Input?["name"]?.GetValue<string>());
     }
 
+    [Fact]
+    public async Task ValidateAsync_passes_containing_node_to_provider()
+    {
+        var provider = new CapturingProvider();
+        var recipe = RecipeBuilder.TwoStepRecipe(JsonNode.Parse("""{"nested":{"name":"[capture: value]"}}"""));
+        var engine = RecipeEngine.Create().AddInterpolationProvider(provider).RegisterHandler(new TestStepHandler());
+
+        await engine.ValidateAsync(recipe, cancellationToken: TestContext.Current.CancellationToken);
+
+        Assert.NotNull(provider.Input);
+        Assert.True(provider.Input.AsValue().TryGetValue<string>(out var value));
+        Assert.Equal("[capture: value]", value);
+    }
+
     private sealed class LiteralProvider(string prefix, string value) : IRecipeInterpolationProvider
     {
         public string Prefix { get; } = prefix;
@@ -80,6 +94,24 @@ public sealed class InterpolationProviderRoutingTests
 
         public ValueTask<RecipeInterpolationValidationResult> ValidateAsync(RecipeInterpolationContext context, CancellationToken cancellationToken = default)
         {
+            return ValueTask.FromResult(RecipeInterpolationValidationResult.Success);
+        }
+
+        public ValueTask<RecipeInterpolationResolutionResult> ResolveAsync(RecipeInterpolationContext context, CancellationToken cancellationToken = default)
+        {
+            return ValueTask.FromResult(new RecipeInterpolationResolutionResult(JsonValue.Create(context.Expression), []));
+        }
+    }
+
+    private sealed class CapturingProvider : IRecipeInterpolationProvider
+    {
+        public string Prefix => "capture";
+
+        public JsonNode? Input { get; private set; }
+
+        public ValueTask<RecipeInterpolationValidationResult> ValidateAsync(RecipeInterpolationContext context, CancellationToken cancellationToken = default)
+        {
+            Input = context.Input;
             return ValueTask.FromResult(RecipeInterpolationValidationResult.Success);
         }
 

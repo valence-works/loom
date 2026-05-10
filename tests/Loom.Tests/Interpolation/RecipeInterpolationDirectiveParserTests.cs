@@ -19,4 +19,13 @@ public sealed class RecipeInterpolationDirectiveParserTests
 
         Assert.Empty(directives);
     }
+
+    [Fact]
+    public void Parse_allows_brackets_inside_expression()
+    {
+        var directives = RecipeInterpolationDirectiveParser.Parse("[js: variables('cfg')['key'][0]]");
+
+        var directive = Assert.Single(directives);
+        Assert.Equal("variables('cfg')['key'][0]", directive.Expression);
+    }
 }

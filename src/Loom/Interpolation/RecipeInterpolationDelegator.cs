@@ -16,8 +16,9 @@ internal static class RecipeInterpolationDelegator
         List<RecipeDiagnostic> diagnostics = [];
         foreach (var step in recipe.Steps)
         {
-            foreach (var directive in FindDirectives(step.Input))
+            foreach (var locatedDirective in FindDirectives(step.Input))
             {
+                var directive = locatedDirective.Directive;
                 if (!providers.TryGetProvider(directive.Prefix, out var provider))
                 {
                     diagnostics.Add(UnknownProviderDiagnostic(step, directive));
@@ -27,7 +28,7 @@ internal static class RecipeInterpolationDelegator
                 var context = new RecipeInterpolationContext(
                     recipe,
                     step,
-                    step.Input,
+                    locatedDirective.Input,
                     directive.Prefix,
                     directive.Expression,
                     variables,
@@ -185,7 +186,7 @@ internal static class RecipeInterpolationDelegator
         }
     }
 
-    private static IEnumerable<RecipeInterpolationDirective> FindDirectives(JsonNode? node)
+    private static IEnumerable<LocatedRecipeInterpolationDirective> FindDirectives(JsonNode? node)
     {
         if (node is null)
         {
@@ -196,7 +197,7 @@ internal static class RecipeInterpolationDelegator
         {
             foreach (var directive in RecipeInterpolationDirectiveParser.Parse(text))
             {
-                yield return directive;
+                yield return new LocatedRecipeInterpolationDirective(node, directive);
             }
         }
         else if (node is JsonObject jsonObject)
@@ -277,3 +278,5 @@ internal static class RecipeInterpolationDelegator
 }
 
 internal sealed record RecipeInterpolationResolution(JsonNode? ResolvedInput, IReadOnlyList<RecipeDiagnostic> Diagnostics);
+
+internal sealed record LocatedRecipeInterpolationDirective(JsonNode Input, RecipeInterpolationDirective Directive);
