@@ -13,7 +13,12 @@ internal sealed class StepHandlerRegistry
             throw new ArgumentException("Handler step type is required.", nameof(handler));
         }
 
-        _handlers[handler.StepType] = handler;
+        if (_handlers.ContainsKey(handler.StepType))
+        {
+            throw new ArgumentException($"A handler is already registered for step type '{handler.StepType}'.", nameof(handler));
+        }
+
+        _handlers.Add(handler.StepType, handler);
     }
 
     public bool TryGet(string stepType, out IRecipeStepHandler handler) => _handlers.TryGetValue(stepType, out handler!);

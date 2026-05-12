@@ -62,6 +62,9 @@ dotnet test --no-build --configuration Release
 ## Active Technologies
 - C# latest, .NET 10 (`net10.0`) + .NET base libraries and `System.Text.Json`; optional standard DI abstractions only if needed for host-controlled scoped handler/service integration (001-loom-recipe-engine)
 - N/A for engine state; JSON recipe files and embedded JSON resources for recipe source inputs (001-loom-recipe-engine)
+- C# latest, .NET 10 (`net10.0`) + .NET base libraries, `System.Text.Json`, reflection APIs, and `IServiceProvider`; no new package dependency required for the initial activator (002-typed-step-authoring)
+- N/A for engine state; typed steps consume existing in-memory or JSON recipe `input` data (002-typed-step-authoring)
 
 ## Recent Changes
+- 002-typed-step-authoring: Added C# latest, .NET 10 (`net10.0`) + .NET base libraries, `System.Text.Json`, reflection APIs, and `IServiceProvider`; no new package dependency required for the initial activator
 - 001-loom-recipe-engine: Added C# latest, .NET 10 (`net10.0`) + .NET base libraries and `System.Text.Json`; optional standard DI abstractions only if needed for host-controlled scoped handler/service integration
