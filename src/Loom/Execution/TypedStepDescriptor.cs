@@ -16,7 +16,7 @@ internal sealed record TypedStepDescriptor(
     ConstructorInfo Constructor,
     IReadOnlyList<TypedStepInputProperty> InputProperties,
     IReadOnlyList<TypedStepServiceProperty> ServiceProperties,
-    MethodInfo ExecuteMethod);
+    Func<object, StepContext, CancellationToken, ValueTask<object?>> OutputExecutor);
 
 internal sealed record TypedStepInputProperty(
     PropertyInfo Property,

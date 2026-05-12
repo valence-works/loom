@@ -1,6 +1,6 @@
 # Tasks: Typed Step Authoring
 
-**Input**: Design documents from `/Users/sipke/Projects/loom/specs/002-typed-step-authoring/`
+**Input**: Design documents from `specs/002-typed-step-authoring/`
 **Prerequisites**: plan.md, spec.md, research.md, data-model.md, contracts/public-api.md, quickstart.md
 
 **Tests**: Behavioral changes require xUnit coverage in `tests/Loom.Tests`. Public API changes require tests or documentation that demonstrate intended usage and compatibility expectations.
@@ -17,9 +17,9 @@
 
 **Purpose**: Prepare the feature folders and keep generated artifacts easy to navigate.
 
-- [X] T001 Create typed-step test folder in `/Users/sipke/Projects/loom/tests/Loom.Tests/TypedSteps`
-- [X] T002 Confirm typed-step runtime files will live in `/Users/sipke/Projects/loom/src/Loom/Execution`
-- [X] T003 Verify current solution builds before feature work with `dotnet build` from `/Users/sipke/Projects/loom`
+- [X] T001 Create typed-step test folder in `tests/Loom.Tests/TypedSteps`
+- [X] T002 Confirm typed-step runtime files will live in `src/Loom/Execution`
+- [X] T003 Verify current solution builds before feature work with `dotnet build` from repository root
 
 ---
 
@@ -29,15 +29,15 @@
 
 **CRITICAL**: No user story work can begin until this phase is complete.
 
-- [X] T004 [P] Define `StepAttribute` in `/Users/sipke/Projects/loom/src/Loom.Abstractions/StepAttribute.cs`
-- [X] T005 [P] Define `StepServiceAttribute` in `/Users/sipke/Projects/loom/src/Loom.Abstractions/StepServiceAttribute.cs`
-- [X] T006 [P] Define `IStep` and `IStep<TOutput>` in `/Users/sipke/Projects/loom/src/Loom.Abstractions/IStep.cs`
-- [X] T007 Define `StepContext` in `/Users/sipke/Projects/loom/src/Loom.Abstractions/StepContext.cs`
-- [X] T008 Add a non-null empty service provider helper in `/Users/sipke/Projects/loom/src/Loom/Execution/HostServiceProvider.cs`
-- [X] T009 Create `TypedStepDescriptor` metadata model in `/Users/sipke/Projects/loom/src/Loom/Execution/TypedStepDescriptor.cs`
-- [X] T010 Create `TypedStepDescriptorFactory` validation skeleton in `/Users/sipke/Projects/loom/src/Loom/Execution/TypedStepDescriptorFactory.cs`
-- [X] T011 Create `TypedStepAdapter` skeleton implementing `IRecipeStepHandler` in `/Users/sipke/Projects/loom/src/Loom/Execution/TypedStepAdapter.cs`
-- [X] T012 Update `StepHandlerRegistry` to reject duplicate step type registrations in `/Users/sipke/Projects/loom/src/Loom/Execution/StepHandlerRegistry.cs`
+- [X] T004 [P] Define `StepAttribute` in `src/Loom.Abstractions/StepAttribute.cs`
+- [X] T005 [P] Define `StepServiceAttribute` in `src/Loom.Abstractions/StepServiceAttribute.cs`
+- [X] T006 [P] Define `IStep` and `IStep<TOutput>` in `src/Loom.Abstractions/IStep.cs`
+- [X] T007 Define `StepContext` in `src/Loom.Abstractions/StepContext.cs`
+- [X] T008 Add a non-null empty service provider helper in `src/Loom/Execution/HostServiceProvider.cs`
+- [X] T009 Create `TypedStepDescriptor` metadata model in `src/Loom/Execution/TypedStepDescriptor.cs`
+- [X] T010 Create `TypedStepDescriptorFactory` validation skeleton in `src/Loom/Execution/TypedStepDescriptorFactory.cs`
+- [X] T011 Create `TypedStepAdapter` skeleton implementing `IRecipeStepHandler` in `src/Loom/Execution/TypedStepAdapter.cs`
+- [X] T012 Update `StepHandlerRegistry` to reject duplicate step type registrations in `src/Loom/Execution/StepHandlerRegistry.cs`
 
 **Checkpoint**: Public typed-step contracts exist and the runtime has a shared descriptor/adapter shape.
 
@@ -51,19 +51,19 @@
 
 ### Tests for User Story 1
 
-- [X] T013 [P] [US1] Add typed step execution test for required/defaulted public input properties in `/Users/sipke/Projects/loom/tests/Loom.Tests/TypedSteps/TypedStepExecutionTests.cs`
-- [X] T014 [P] [US1] Add constructor service injection execution test in `/Users/sipke/Projects/loom/tests/Loom.Tests/TypedSteps/TypedStepServiceInjectionTests.cs`
-- [X] T015 [P] [US1] Add missing C# `required` input validation test in `/Users/sipke/Projects/loom/tests/Loom.Tests/TypedSteps/TypedStepBindingTests.cs`
+- [X] T013 [P] [US1] Add typed step execution test for required/defaulted public input properties in `tests/Loom.Tests/TypedSteps/TypedStepExecutionTests.cs`
+- [X] T014 [P] [US1] Add constructor service injection execution test in `tests/Loom.Tests/TypedSteps/TypedStepServiceInjectionTests.cs`
+- [X] T015 [P] [US1] Add missing C# `required` input validation test in `tests/Loom.Tests/TypedSteps/TypedStepBindingTests.cs`
 
 ### Implementation for User Story 1
 
-- [X] T016 [US1] Implement public `RegisterStep<TStep>()` API in `/Users/sipke/Projects/loom/src/Loom/RecipeEngine.cs`
-- [X] T017 [US1] Implement typed-step descriptor discovery for `[Step]`, `IStep`, public input properties, and C# `required` input in `/Users/sipke/Projects/loom/src/Loom/Execution/TypedStepDescriptorFactory.cs`
-- [X] T018 [US1] Implement constructor service activation in `/Users/sipke/Projects/loom/src/Loom/Execution/TypedStepActivator.cs`
-- [X] T019 [US1] Implement public input property binding with property defaults in `/Users/sipke/Projects/loom/src/Loom/Execution/StepInputBinder.cs`
-- [X] T020 [US1] Implement `IStep` invocation and `StepContext` creation in `/Users/sipke/Projects/loom/src/Loom/Execution/TypedStepAdapter.cs`
-- [X] T021 [US1] Wire `StepContext` from existing execution context values in `/Users/sipke/Projects/loom/src/Loom.Abstractions/StepContext.cs`
-- [X] T022 [US1] Verify User Story 1 with `dotnet test --filter TypedStepExecutionTests|TypedStepServiceInjectionTests|TypedStepBindingTests` from `/Users/sipke/Projects/loom`
+- [X] T016 [US1] Implement public `RegisterStep<TStep>()` API in `src/Loom/RecipeEngine.cs`
+- [X] T017 [US1] Implement typed-step descriptor discovery for `[Step]`, `IStep`, public input properties, and C# `required` input in `src/Loom/Execution/TypedStepDescriptorFactory.cs`
+- [X] T018 [US1] Implement constructor service activation in `src/Loom/Execution/TypedStepActivator.cs`
+- [X] T019 [US1] Implement public input property binding with property defaults in `src/Loom/Execution/StepInputBinder.cs`
+- [X] T020 [US1] Implement `IStep` invocation and `StepContext` creation in `src/Loom/Execution/TypedStepAdapter.cs`
+- [X] T021 [US1] Wire `StepContext` from existing execution context values in `src/Loom.Abstractions/StepContext.cs`
+- [X] T022 [US1] Verify User Story 1 with `dotnet test --filter TypedStepExecutionTests|TypedStepServiceInjectionTests|TypedStepBindingTests` from repository root
 
 **Checkpoint**: MVP works independently: one typed step with input and constructor services executes through Loom.
 
@@ -77,16 +77,16 @@
 
 ### Tests for User Story 2
 
-- [X] T023 [P] [US2] Add explicit typed step registration tests in `/Users/sipke/Projects/loom/tests/Loom.Tests/TypedSteps/TypedStepRegistrationTests.cs`
-- [X] T024 [P] [US2] Add assembly scanning registration tests in `/Users/sipke/Projects/loom/tests/Loom.Tests/TypedSteps/TypedStepAssemblyScanningTests.cs`
-- [X] T025 [P] [US2] Add duplicate step type registration tests in `/Users/sipke/Projects/loom/tests/Loom.Tests/Execution/StepHandlerRegistryTests.cs`
+- [X] T023 [P] [US2] Add explicit typed step registration tests in `tests/Loom.Tests/TypedSteps/TypedStepRegistrationTests.cs`
+- [X] T024 [P] [US2] Add assembly scanning registration tests in `tests/Loom.Tests/TypedSteps/TypedStepAssemblyScanningTests.cs`
+- [X] T025 [P] [US2] Add duplicate step type registration tests in `tests/Loom.Tests/Execution/StepHandlerRegistryTests.cs`
 
 ### Implementation for User Story 2
 
-- [X] T026 [US2] Implement public `RegisterStepsFromAssembly(Assembly assembly)` API in `/Users/sipke/Projects/loom/src/Loom/RecipeEngine.cs`
-- [X] T027 [US2] Implement typed step assembly scanning in `/Users/sipke/Projects/loom/src/Loom/Execution/TypedStepDescriptorFactory.cs`
-- [X] T028 [US2] Improve duplicate registration exception messages in `/Users/sipke/Projects/loom/src/Loom/Execution/StepHandlerRegistry.cs`
-- [X] T029 [US2] Verify User Story 2 with `dotnet test --filter TypedStepRegistrationTests|TypedStepAssemblyScanningTests|StepHandlerRegistryTests` from `/Users/sipke/Projects/loom`
+- [X] T026 [US2] Implement public `RegisterStepsFromAssembly(Assembly assembly)` API in `src/Loom/RecipeEngine.cs`
+- [X] T027 [US2] Implement typed step assembly scanning in `src/Loom/Execution/TypedStepDescriptorFactory.cs`
+- [X] T028 [US2] Improve duplicate registration exception messages in `src/Loom/Execution/StepHandlerRegistry.cs`
+- [X] T029 [US2] Verify User Story 2 with `dotnet test --filter TypedStepRegistrationTests|TypedStepAssemblyScanningTests|StepHandlerRegistryTests` from repository root
 
 **Checkpoint**: Explicit registration and assembly scanning are independently usable and deterministic.
 
@@ -100,14 +100,14 @@
 
 ### Tests for User Story 3
 
-- [X] T030 [P] [US3] Add mixed typed-step and direct-handler execution test in `/Users/sipke/Projects/loom/tests/Loom.Tests/TypedSteps/TypedStepCompatibilityTests.cs`
-- [X] T031 [P] [US3] Add direct handler raw input preservation test in `/Users/sipke/Projects/loom/tests/Loom.Tests/TypedSteps/DirectHandlerCompatibilityTests.cs`
+- [X] T030 [P] [US3] Add mixed typed-step and direct-handler execution test in `tests/Loom.Tests/TypedSteps/TypedStepCompatibilityTests.cs`
+- [X] T031 [P] [US3] Add direct handler raw input preservation test in `tests/Loom.Tests/TypedSteps/DirectHandlerCompatibilityTests.cs`
 
 ### Implementation for User Story 3
 
-- [X] T032 [US3] Ensure typed-step adapter registration preserves direct `IRecipeStepHandler` execution behavior in `/Users/sipke/Projects/loom/src/Loom/Execution/TypedStepAdapter.cs`
-- [X] T033 [US3] Ensure `RecipeEngine.RegisterHandler(IRecipeStepHandler handler)` remains source-compatible in `/Users/sipke/Projects/loom/src/Loom/RecipeEngine.cs`
-- [X] T034 [US3] Verify User Story 3 and existing execution suite with `dotnet test --filter TypedStepCompatibilityTests|DirectHandlerCompatibilityTests|Execution` from `/Users/sipke/Projects/loom`
+- [X] T032 [US3] Ensure typed-step adapter registration preserves direct `IRecipeStepHandler` execution behavior in `src/Loom/Execution/TypedStepAdapter.cs`
+- [X] T033 [US3] Ensure `RecipeEngine.RegisterHandler(IRecipeStepHandler handler)` remains source-compatible in `src/Loom/RecipeEngine.cs`
+- [X] T034 [US3] Verify User Story 3 and existing execution suite with `dotnet test --filter TypedStepCompatibilityTests|DirectHandlerCompatibilityTests|Execution` from repository root
 
 **Checkpoint**: Existing handler-based integrations remain valid while typed steps can be adopted incrementally.
 
@@ -121,16 +121,16 @@
 
 ### Tests for User Story 4
 
-- [X] T035 [P] [US4] Add no-output typed step result test in `/Users/sipke/Projects/loom/tests/Loom.Tests/TypedSteps/TypedStepOutputTests.cs`
-- [X] T036 [P] [US4] Add typed output property mapping test in `/Users/sipke/Projects/loom/tests/Loom.Tests/TypedSteps/TypedStepOutputMappingTests.cs`
-- [X] T037 [P] [US4] Add typed output interpolation integration test in `/Users/sipke/Projects/loom/tests/Loom.Tests/TypedSteps/TypedStepOutputInterpolationTests.cs`
+- [X] T035 [P] [US4] Add no-output typed step result test in `tests/Loom.Tests/TypedSteps/TypedStepOutputTests.cs`
+- [X] T036 [P] [US4] Add typed output property mapping test in `tests/Loom.Tests/TypedSteps/TypedStepOutputMappingTests.cs`
+- [X] T037 [P] [US4] Add typed output interpolation integration test in `tests/Loom.Tests/TypedSteps/TypedStepOutputInterpolationTests.cs`
 
 ### Implementation for User Story 4
 
-- [X] T038 [US4] Implement output descriptor metadata for `IStep<TOutput>` in `/Users/sipke/Projects/loom/src/Loom/Execution/TypedStepDescriptorFactory.cs`
-- [X] T039 [US4] Implement typed output dictionary mapping in `/Users/sipke/Projects/loom/src/Loom/Execution/TypedStepOutputMapper.cs`
-- [X] T040 [US4] Wire `IStep<TOutput>` invocation to `RecipeStepExecutionResult` in `/Users/sipke/Projects/loom/src/Loom/Execution/TypedStepAdapter.cs`
-- [X] T041 [US4] Verify User Story 4 with `dotnet test --filter TypedStepOutputTests|TypedStepOutputMappingTests|TypedStepOutputInterpolationTests` from `/Users/sipke/Projects/loom`
+- [X] T038 [US4] Implement output descriptor metadata for `IStep<TOutput>` in `src/Loom/Execution/TypedStepDescriptorFactory.cs`
+- [X] T039 [US4] Implement typed output dictionary mapping in `src/Loom/Execution/TypedStepOutputMapper.cs`
+- [X] T040 [US4] Wire `IStep<TOutput>` invocation to `RecipeStepExecutionResult` in `src/Loom/Execution/TypedStepAdapter.cs`
+- [X] T041 [US4] Verify User Story 4 with `dotnet test --filter TypedStepOutputTests|TypedStepOutputMappingTests|TypedStepOutputInterpolationTests` from repository root
 
 **Checkpoint**: Typed steps can produce output without changing `RecipeStepExecutionResult` or interpolation contracts.
 
@@ -144,18 +144,18 @@
 
 ### Tests for User Story 5
 
-- [X] T042 [P] [US5] Add invalid typed-step metadata registration tests in `/Users/sipke/Projects/loom/tests/Loom.Tests/TypedSteps/TypedStepRegistrationTests.cs`
-- [X] T043 [P] [US5] Add invalid JSON shape and conversion diagnostics tests in `/Users/sipke/Projects/loom/tests/Loom.Tests/TypedSteps/TypedStepBindingTests.cs`
-- [X] T044 [P] [US5] Add unknown input field diagnostics tests in `/Users/sipke/Projects/loom/tests/Loom.Tests/TypedSteps/TypedStepUnknownInputTests.cs`
-- [X] T045 [P] [US5] Add `[StepService]` property injection tests in `/Users/sipke/Projects/loom/tests/Loom.Tests/TypedSteps/TypedStepServiceInjectionTests.cs`
+- [X] T042 [P] [US5] Add invalid typed-step metadata registration tests in `tests/Loom.Tests/TypedSteps/TypedStepRegistrationTests.cs`
+- [X] T043 [P] [US5] Add invalid JSON shape and conversion diagnostics tests in `tests/Loom.Tests/TypedSteps/TypedStepBindingTests.cs`
+- [X] T044 [P] [US5] Add unknown input field diagnostics tests in `tests/Loom.Tests/TypedSteps/TypedStepUnknownInputTests.cs`
+- [X] T045 [P] [US5] Add `[StepService]` property injection tests in `tests/Loom.Tests/TypedSteps/TypedStepServiceInjectionTests.cs`
 
 ### Implementation for User Story 5
 
-- [X] T046 [US5] Implement structured binding diagnostics in `/Users/sipke/Projects/loom/src/Loom/Execution/StepInputBinder.cs`
-- [X] T047 [US5] Implement invalid typed-step metadata registration errors in `/Users/sipke/Projects/loom/src/Loom/Execution/TypedStepDescriptorFactory.cs`
-- [X] T048 [US5] Implement `[StepService]` property injection and validation in `/Users/sipke/Projects/loom/src/Loom/Execution/TypedStepActivator.cs`
-- [X] T049 [US5] Ensure typed-step diagnostics redact input values through existing diagnostic/result behavior in `/Users/sipke/Projects/loom/src/Loom/Validation/DiagnosticRedactor.cs`
-- [X] T050 [US5] Verify User Story 5 with `dotnet test --filter TypedStepBindingTests|TypedStepUnknownInputTests|TypedStepRegistrationTests|TypedStepServiceInjectionTests` from `/Users/sipke/Projects/loom`
+- [X] T046 [US5] Implement structured binding diagnostics in `src/Loom/Execution/StepInputBinder.cs`
+- [X] T047 [US5] Implement invalid typed-step metadata registration errors in `src/Loom/Execution/TypedStepDescriptorFactory.cs`
+- [X] T048 [US5] Implement `[StepService]` property injection and validation in `src/Loom/Execution/TypedStepActivator.cs`
+- [X] T049 [US5] Ensure typed-step diagnostics redact input values through existing diagnostic/result behavior in `src/Loom/Validation/DiagnosticRedactor.cs`
+- [X] T050 [US5] Verify User Story 5 with `dotnet test --filter TypedStepBindingTests|TypedStepUnknownInputTests|TypedStepRegistrationTests|TypedStepServiceInjectionTests` from repository root
 
 **Checkpoint**: Recipe authors get clear validation feedback before typed-step side effects occur.
 
@@ -165,13 +165,13 @@
 
 **Purpose**: Documentation, sample, compatibility review, and whole-suite verification.
 
-- [X] T051 [P] Update typed-step quickstart examples in `/Users/sipke/Projects/loom/specs/002-typed-step-authoring/quickstart.md`
-- [X] T052 [P] Add or update README typed-step usage section in `/Users/sipke/Projects/loom/README.md`
-- [X] T053 [P] Add sample typed step in `/Users/sipke/Projects/loom/samples/Loom.Sample/Handlers/CreateUserStep.cs`
-- [X] T054 Update sample registration flow in `/Users/sipke/Projects/loom/samples/Loom.Sample/Program.cs`
-- [X] T055 Review public API contracts against implementation in `/Users/sipke/Projects/loom/specs/002-typed-step-authoring/contracts/public-api.md`
-- [X] T056 Run full test suite with `dotnet test` from `/Users/sipke/Projects/loom`
-- [X] T057 Run release build with `dotnet build --configuration Release` from `/Users/sipke/Projects/loom`
+- [X] T051 [P] Update typed-step quickstart examples in `specs/002-typed-step-authoring/quickstart.md`
+- [X] T052 [P] Add or update README typed-step usage section in `README.md`
+- [X] T053 [P] Add sample typed step in `samples/Loom.Sample/Handlers/CreateUserStep.cs`
+- [X] T054 Update sample registration flow in `samples/Loom.Sample/Program.cs`
+- [X] T055 Review public API contracts against implementation in `specs/002-typed-step-authoring/contracts/public-api.md`
+- [X] T056 Run full test suite with `dotnet test` from repository root
+- [X] T057 Run release build with `dotnet build --configuration Release` from repository root
 
 ---
 
@@ -216,18 +216,18 @@
 
 ```bash
 # Launch tests for User Story 1 together:
-Task: "Add typed step execution test for required/defaulted public input properties in /Users/sipke/Projects/loom/tests/Loom.Tests/TypedSteps/TypedStepExecutionTests.cs"
-Task: "Add constructor service injection execution test in /Users/sipke/Projects/loom/tests/Loom.Tests/TypedSteps/TypedStepServiceInjectionTests.cs"
-Task: "Add missing C# required input validation test in /Users/sipke/Projects/loom/tests/Loom.Tests/TypedSteps/TypedStepBindingTests.cs"
+Task: "Add typed step execution test for required/defaulted public input properties in tests/Loom.Tests/TypedSteps/TypedStepExecutionTests.cs"
+Task: "Add constructor service injection execution test in tests/Loom.Tests/TypedSteps/TypedStepServiceInjectionTests.cs"
+Task: "Add missing C# required input validation test in tests/Loom.Tests/TypedSteps/TypedStepBindingTests.cs"
 ```
 
 ## Parallel Example: User Story 2
 
 ```bash
 # Launch registration behavior tests together:
-Task: "Add explicit typed step registration tests in /Users/sipke/Projects/loom/tests/Loom.Tests/TypedSteps/TypedStepRegistrationTests.cs"
-Task: "Add assembly scanning registration tests in /Users/sipke/Projects/loom/tests/Loom.Tests/TypedSteps/TypedStepAssemblyScanningTests.cs"
-Task: "Add duplicate step type registration tests in /Users/sipke/Projects/loom/tests/Loom.Tests/Execution/StepHandlerRegistryTests.cs"
+Task: "Add explicit typed step registration tests in tests/Loom.Tests/TypedSteps/TypedStepRegistrationTests.cs"
+Task: "Add assembly scanning registration tests in tests/Loom.Tests/TypedSteps/TypedStepAssemblyScanningTests.cs"
+Task: "Add duplicate step type registration tests in tests/Loom.Tests/Execution/StepHandlerRegistryTests.cs"
 ```
 
 ## Implementation Strategy

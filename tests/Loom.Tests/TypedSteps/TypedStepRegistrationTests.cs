@@ -48,6 +48,14 @@ public sealed class TypedStepRegistrationTests
         Assert.Contains("service property", exception.Message, StringComparison.OrdinalIgnoreCase);
     }
 
+    [Fact]
+    public void RegisterStep_rejects_duplicate_input_json_names()
+    {
+        var exception = Assert.Throws<ArgumentException>(() => RecipeEngine.Create().RegisterStep<DuplicateInputNamesStep>());
+
+        Assert.Contains("url", exception.Message, StringComparison.OrdinalIgnoreCase);
+    }
+
     [Step("registered-typed")]
     private sealed class RegisteredTypedStep : IStep
     {
@@ -88,6 +96,19 @@ public sealed class TypedStepRegistrationTests
     {
         [StepService]
         public object Service => new();
+
+        public ValueTask ExecuteAsync(StepContext context, CancellationToken cancellationToken = default)
+        {
+            return ValueTask.CompletedTask;
+        }
+    }
+
+    [Step("duplicate-input-names")]
+    private sealed class DuplicateInputNamesStep : IStep
+    {
+        public string? URL { get; init; }
+
+        public string? Url { get; init; }
 
         public ValueTask ExecuteAsync(StepContext context, CancellationToken cancellationToken = default)
         {

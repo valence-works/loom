@@ -9,43 +9,43 @@ internal static class StepInputBinder
 
     public static IReadOnlyList<RecipeDiagnostic> Validate(RecipeStep step, TypedStepDescriptor descriptor)
     {
-        if (step.Input is null)
-        {
-            return ValidateObject(step, descriptor, []);
-        }
-
-        if (step.Input is not JsonObject input)
-        {
-            return [Error("LOOM_TYPED_STEP_INPUT_INVALID", $"Step '{step.Id ?? step.Type}' input must be a JSON object.", Target(step, "input"))];
-        }
-
-        return ValidateObject(step, descriptor, input);
+        return Bind(step, descriptor).Diagnostics;
     }
 
     public static void Apply(object instance, RecipeStep step, TypedStepDescriptor descriptor)
     {
+        Apply(instance, Bind(step, descriptor));
+    }
+
+    public static StepInputBinding Bind(RecipeStep step, TypedStepDescriptor descriptor)
+    {
         if (step.Input is not JsonObject input)
         {
-            return;
+            return step.Input is null
+                ? BindObject(step, descriptor, [])
+                : new StepInputBinding(
+                    [],
+                    [Error("LOOM_TYPED_STEP_INPUT_INVALID", $"Step '{step.Id ?? step.Type}' input must be a JSON object.", Target(step, "input"))]);
         }
 
-        foreach (var inputProperty in descriptor.InputProperties)
-        {
-            if (!TryGetProperty(input, inputProperty.JsonName, out var value))
-            {
-                continue;
-            }
+        return BindObject(step, descriptor, input);
+    }
 
-            inputProperty.Property.SetValue(instance, Deserialize(value, inputProperty.Property.PropertyType));
+    public static void Apply(object instance, StepInputBinding binding)
+    {
+        foreach (var value in binding.Values)
+        {
+            value.Property.SetValue(instance, value.Value);
         }
     }
 
-    private static IReadOnlyList<RecipeDiagnostic> ValidateObject(
+    private static StepInputBinding BindObject(
         RecipeStep step,
         TypedStepDescriptor descriptor,
         JsonObject input)
     {
         List<RecipeDiagnostic> diagnostics = [];
+        List<StepInputValue> values = [];
         var inputProperties = descriptor.InputProperties.ToDictionary(property => property.JsonName, StringComparer.OrdinalIgnoreCase);
 
         foreach (var inputField in input)
@@ -53,6 +53,12 @@ internal static class StepInputBinder
             if (!inputProperties.TryGetValue(inputField.Key, out var inputProperty))
             {
                 diagnostics.Add(Error("LOOM_TYPED_STEP_INPUT_UNKNOWN", $"Step '{step.Id ?? step.Type}' input field '{inputField.Key}' is not supported.", Target(step, $"input.{inputField.Key}")));
+                continue;
+            }
+
+            if (inputField.Value is null && !IsNullAllowed(inputProperty.Property.PropertyType))
+            {
+                diagnostics.Add(Error("LOOM_TYPED_STEP_INPUT_INVALID", $"Step '{step.Id ?? step.Type}' input field '{inputField.Key}' is invalid.", Target(step, $"input.{inputField.Key}")));
                 continue;
             }
 
@@ -64,7 +70,9 @@ internal static class StepInputBinder
 
             try
             {
-                _ = Deserialize(inputField.Value, inputProperty.Property.PropertyType);
+                values.Add(new StepInputValue(
+                    inputProperty.Property,
+                    Deserialize(inputField.Value, inputProperty.Property.PropertyType)));
             }
             catch (Exception exception) when (exception is JsonException or InvalidOperationException or NotSupportedException)
             {
@@ -80,7 +88,7 @@ internal static class StepInputBinder
             }
         }
 
-        return diagnostics;
+        return new StepInputBinding(values, diagnostics);
     }
 
     private static bool TryGetProperty(JsonObject input, string jsonName, out JsonNode? value)
@@ -103,6 +111,11 @@ internal static class StepInputBinder
         return value?.Deserialize(targetType, JsonOptions);
     }
 
+    private static bool IsNullAllowed(Type targetType)
+    {
+        return !targetType.IsValueType || Nullable.GetUnderlyingType(targetType) is not null;
+    }
+
     private static RecipeDiagnostic Error(string code, string message, string target)
     {
         return new RecipeDiagnostic(DiagnosticSeverity.Error, code, message, target);
@@ -113,3 +126,11 @@ internal static class StepInputBinder
         return step.Id is null ? $"step:{step.Type}.{field}" : $"step:{step.Id}.{field}";
     }
 }
+
+internal sealed record StepInputBinding(
+    IReadOnlyList<StepInputValue> Values,
+    IReadOnlyList<RecipeDiagnostic> Diagnostics);
+
+internal sealed record StepInputValue(
+    System.Reflection.PropertyInfo Property,
+    object? Value);

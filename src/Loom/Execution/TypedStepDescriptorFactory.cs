@@ -7,6 +7,8 @@ namespace Loom;
 internal static class TypedStepDescriptorFactory
 {
     private static readonly JsonNamingPolicy PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
+    private static readonly MethodInfo CreateOutputExecutorMethod = typeof(TypedStepDescriptorFactory)
+        .GetMethod(nameof(CreateOutputExecutor), BindingFlags.NonPublic | BindingFlags.Static)!;
 
     public static IReadOnlyList<TypedStepDescriptor> CreateFromAssembly(Assembly assembly)
     {
@@ -53,7 +55,7 @@ internal static class TypedStepDescriptorFactory
             constructor,
             inputProperties,
             serviceProperties,
-            contract.ExecuteMethod);
+            contract.OutputExecutor);
     }
 
     private static TypedStepContract GetContract(Type stepType)
@@ -69,7 +71,7 @@ internal static class TypedStepDescriptorFactory
             return new TypedStepContract(
                 TypedStepContractKind.NoOutput,
                 null,
-                typeof(IStep).GetMethod(nameof(IStep.ExecuteAsync))!);
+                (_, _, _) => ValueTask.FromResult<object?>(null));
         }
 
         if (!implementsNoOutput && outputContracts.Length == 1)
@@ -77,7 +79,9 @@ internal static class TypedStepDescriptorFactory
             return new TypedStepContract(
                 TypedStepContractKind.Output,
                 outputContracts[0].GetGenericArguments()[0],
-                outputContracts[0].GetMethod(nameof(IStep<object>.ExecuteAsync))!);
+                CreateOutputExecutorMethod
+                    .MakeGenericMethod(outputContracts[0].GetGenericArguments()[0])
+                    .CreateDelegate<Func<object, StepContext, CancellationToken, ValueTask<object?>>>());
         }
 
         throw new ArgumentException($"Typed step '{stepType.FullName}' must implement exactly one supported typed step contract.", nameof(stepType));
@@ -96,7 +100,7 @@ internal static class TypedStepDescriptorFactory
 
     private static IReadOnlyList<TypedStepInputProperty> GetInputProperties(Type stepType)
     {
-        return stepType
+        var inputProperties = stepType
             .GetProperties(BindingFlags.Public | BindingFlags.Instance)
             .Where(property => property.GetCustomAttribute<StepServiceAttribute>() is null)
             .Where(property => property.SetMethod?.IsPublic == true)
@@ -105,6 +109,16 @@ internal static class TypedStepDescriptorFactory
                 PropertyNamingPolicy.ConvertName(property.Name),
                 property.GetCustomAttribute<RequiredMemberAttribute>() is not null))
             .ToArray();
+
+        var duplicate = inputProperties
+            .GroupBy(property => property.JsonName, StringComparer.OrdinalIgnoreCase)
+            .FirstOrDefault(group => group.Count() > 1);
+        if (duplicate is not null)
+        {
+            throw new ArgumentException($"Typed step '{stepType.FullName}' has multiple input properties that bind to '{duplicate.Key}'.", nameof(stepType));
+        }
+
+        return inputProperties;
     }
 
     private static IReadOnlyList<TypedStepServiceProperty> GetServiceProperties(Type stepType)
@@ -125,5 +139,17 @@ internal static class TypedStepDescriptorFactory
         return serviceProperties.Select(property => new TypedStepServiceProperty(property)).ToArray();
     }
 
-    private sealed record TypedStepContract(TypedStepContractKind Kind, Type? OutputType, MethodInfo ExecuteMethod);
+    private static async ValueTask<object?> CreateOutputExecutor<TOutput>(
+        object instance,
+        StepContext context,
+        CancellationToken cancellationToken)
+    {
+        var typedStep = (IStep<TOutput>)instance;
+        return await typedStep.ExecuteAsync(context, cancellationToken).ConfigureAwait(false);
+    }
+
+    private sealed record TypedStepContract(
+        TypedStepContractKind Kind,
+        Type? OutputType,
+        Func<object, StepContext, CancellationToken, ValueTask<object?>> OutputExecutor);
 }

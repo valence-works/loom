@@ -54,6 +54,18 @@ public sealed class TypedStepBindingTests
         Assert.Contains(diagnostics, diagnostic => diagnostic.Code == "LOOM_TYPED_STEP_INPUT_INVALID" && diagnostic.Target == "step:step.input.count");
     }
 
+    [Fact]
+    public async Task Validate_reports_null_for_non_nullable_value_type_input()
+    {
+        var engine = RecipeEngine.Create().RegisterStep<NumericInputStep>();
+
+        var diagnostics = await engine.ValidateAsync(
+            new Recipe("bad", [new RecipeStep("numeric-input", "step", System.Text.Json.Nodes.JsonNode.Parse("""{"count":null}"""))]),
+            cancellationToken: TestContext.Current.CancellationToken);
+
+        Assert.Contains(diagnostics, diagnostic => diagnostic.Code == "LOOM_TYPED_STEP_INPUT_INVALID" && diagnostic.Target == "step:step.input.count");
+    }
+
     [Step("required-input")]
     private sealed class RequiredInputStep : IStep
     {

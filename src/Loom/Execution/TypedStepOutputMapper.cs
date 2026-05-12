@@ -18,13 +18,30 @@ internal static class TypedStepOutputMapper
             .GetType()
             .GetProperties(BindingFlags.Public | BindingFlags.Instance)
             .Where(property => property.GetMethod?.IsPublic == true)
+            .Where(property => property.GetIndexParameters().Length == 0)
+            .Select(property => new
+            {
+                Name = PropertyNamingPolicy.ConvertName(property.Name),
+                Value = property.GetValue(output)
+            })
+            .ToArray();
+
+        var duplicate = values
+            .GroupBy(property => property.Name, StringComparer.OrdinalIgnoreCase)
+            .FirstOrDefault(group => group.Count() > 1);
+        if (duplicate is not null)
+        {
+            throw new InvalidOperationException($"Typed step output contains multiple properties that map to '{duplicate.Key}'.");
+        }
+
+        var outputValues = values
             .ToDictionary(
-                property => PropertyNamingPolicy.ConvertName(property.Name),
-                property => property.GetValue(output),
+                property => property.Name,
+                property => property.Value,
                 StringComparer.Ordinal);
 
-        return values.Count == 0
+        return outputValues.Count == 0
             ? RecipeStepExecutionResult.Empty
-            : new RecipeStepExecutionResult(values);
+            : new RecipeStepExecutionResult(outputValues);
     }
 }

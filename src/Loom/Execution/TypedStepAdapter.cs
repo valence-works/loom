@@ -18,7 +18,18 @@ internal sealed class TypedStepAdapter(TypedStepDescriptor descriptor) : IRecipe
         CancellationToken cancellationToken = default)
     {
         var instance = TypedStepActivator.Create(descriptor, HostServiceProvider.Normalize(context.Services));
-        StepInputBinder.Apply(instance, step, descriptor);
+        var binding = StepInputBinder.Bind(step, descriptor);
+        if (binding.Diagnostics.Any(diagnostic => diagnostic.IsError))
+        {
+            if (context.Diagnostics is List<RecipeDiagnostic> mutableDiagnostics)
+            {
+                mutableDiagnostics.AddRange(binding.Diagnostics);
+            }
+
+            throw new InvalidOperationException("Typed step input binding failed.");
+        }
+
+        StepInputBinder.Apply(instance, binding);
 
         var stepContext = new StepContext(
             context.Recipe,
@@ -28,11 +39,12 @@ internal sealed class TypedStepAdapter(TypedStepDescriptor descriptor) : IRecipe
             context.StepOutputs,
             context.Diagnostics,
             HostServiceProvider.Normalize(context.Services),
-            cancellationToken);
+            cancellationToken,
+            (message, _) => Log(context.Diagnostics, step, message));
 
         if (descriptor.ContractKind == TypedStepContractKind.Output)
         {
-            var output = await ExecuteOutputStepAsync(instance, stepContext, cancellationToken).ConfigureAwait(false);
+            var output = await descriptor.OutputExecutor(instance, stepContext, cancellationToken).ConfigureAwait(false);
             return TypedStepOutputMapper.Map(output);
         }
 
@@ -45,19 +57,17 @@ internal sealed class TypedStepAdapter(TypedStepDescriptor descriptor) : IRecipe
         return RecipeStepExecutionResult.Empty;
     }
 
-    private async ValueTask<object?> ExecuteOutputStepAsync(
-        object instance,
-        StepContext context,
-        CancellationToken cancellationToken)
+    private static void Log(IReadOnlyList<RecipeDiagnostic> diagnostics, RecipeStep step, string message)
     {
-        var valueTask = descriptor.ExecuteMethod.Invoke(instance, [context, cancellationToken])
-            ?? throw new InvalidOperationException($"Typed step '{descriptor.StepType.FullName}' returned null.");
-        var task = (Task)valueTask
-            .GetType()
-            .GetMethod(nameof(ValueTask<object>.AsTask))!
-            .Invoke(valueTask, null)!;
+        if (diagnostics is not List<RecipeDiagnostic> mutableDiagnostics)
+        {
+            return;
+        }
 
-        await task.ConfigureAwait(false);
-        return task.GetType().GetProperty(nameof(Task<object>.Result))!.GetValue(task);
+        mutableDiagnostics.Add(new RecipeDiagnostic(
+            DiagnosticSeverity.Information,
+            "LOOM_STEP_LOG",
+            message,
+            step.Id is null ? $"step:{step.Type}.log" : $"step:{step.Id}.log"));
     }
 }
