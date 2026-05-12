@@ -68,6 +68,11 @@ internal static class StepInputBinder
                 continue;
             }
 
+            if (ContainsInterpolation(inputField.Value))
+            {
+                continue;
+            }
+
             try
             {
                 values.Add(new StepInputValue(
@@ -109,6 +114,13 @@ internal static class StepInputBinder
     private static object? Deserialize(JsonNode? value, Type targetType)
     {
         return value?.Deserialize(targetType, JsonOptions);
+    }
+
+    private static bool ContainsInterpolation(JsonNode? value)
+    {
+        return value is JsonValue jsonValue
+            && jsonValue.TryGetValue<string>(out var text)
+            && InterpolationParser.Parse(text).Count > 0;
     }
 
     private static bool IsNullAllowed(Type targetType)

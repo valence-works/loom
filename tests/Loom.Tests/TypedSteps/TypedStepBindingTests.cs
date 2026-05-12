@@ -1,3 +1,5 @@
+using System.Text.Json.Nodes;
+
 namespace Loom.Tests.TypedSteps;
 
 public sealed class TypedStepBindingTests
@@ -66,6 +68,30 @@ public sealed class TypedStepBindingTests
         Assert.Contains(diagnostics, diagnostic => diagnostic.Code == "LOOM_TYPED_STEP_INPUT_INVALID" && diagnostic.Target == "step:step.input.count");
     }
 
+    [Fact]
+    public async Task Validate_defers_interpolated_non_string_typed_step_input()
+    {
+        var recipe = NumericInterpolationRecipe();
+        var engine = RecipeEngine.Create().RegisterStep<NumericInputStep>();
+
+        var diagnostics = await engine.ValidateAsync(recipe, cancellationToken: TestContext.Current.CancellationToken);
+
+        Assert.DoesNotContain(diagnostics, diagnostic => diagnostic.Code == "LOOM_TYPED_STEP_INPUT_INVALID");
+    }
+
+    [Fact]
+    public async Task Run_binds_interpolated_non_string_typed_step_input_after_resolution()
+    {
+        NumericInputStep.CapturedCount = null;
+        var recipe = NumericInterpolationRecipe();
+        var engine = RecipeEngine.Create().RegisterStep<NumericInputStep>();
+
+        var result = await engine.RunAsync(recipe, cancellationToken: TestContext.Current.CancellationToken);
+
+        Assert.True(result.Succeeded);
+        Assert.Equal(42, NumericInputStep.CapturedCount);
+    }
+
     [Step("required-input")]
     private sealed class RequiredInputStep : IStep
     {
@@ -80,11 +106,25 @@ public sealed class TypedStepBindingTests
     [Step("numeric-input")]
     private sealed class NumericInputStep : IStep
     {
+        public static int? CapturedCount { get; set; }
+
         public int Count { get; init; }
 
         public ValueTask ExecuteAsync(StepContext context, CancellationToken cancellationToken = default)
         {
+            CapturedCount = Count;
             return ValueTask.CompletedTask;
         }
+    }
+
+    private static Recipe NumericInterpolationRecipe()
+    {
+        return new Recipe(
+            "numeric-interpolation",
+            [new RecipeStep("numeric-input", "step", JsonNode.Parse("""{"count":"{{ variables.count }}"}"""))],
+            Variables: new Dictionary<string, JsonNode?>
+            {
+                ["count"] = JsonNode.Parse("42")
+            });
     }
 }
