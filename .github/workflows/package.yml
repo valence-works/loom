@@ -11,8 +11,8 @@ env:
   CONFIGURATION: Release
   PACKAGE_PROJECT: src/Loom/Loom.csproj
   PACKAGE_OUTPUT: artifacts/packages
-  FEEDZ_API_KEY: ${{ secrets.FEEDZ_API_KEY }}
-  FEEDZ_SOURCE_URL: ${{ vars.FEEDZ_SOURCE_URL }}
+  FEEDZ_PREVIEW_API_KEY: ${{ secrets.FEEDZ_PREVIEW_API_KEY }}
+  FEEDZ_PREVIEW_SOURCE_URL: ${{ vars.FEEDZ_PREVIEW_SOURCE_URL }}
   NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
 
 jobs:
@@ -23,13 +23,13 @@ jobs:
     steps:
       - name: Validate package publishing configuration
         run: |
-          if [ -z "$FEEDZ_API_KEY" ]; then
-            echo "::error::FEEDZ_API_KEY secret is required to publish packages to the Feedz preview feed."
+          if [ -z "$FEEDZ_PREVIEW_API_KEY" ]; then
+            echo "::error::FEEDZ_PREVIEW_API_KEY secret is required to publish packages to the Feedz preview feed."
             exit 1
           fi
 
-          if [ -z "$FEEDZ_SOURCE_URL" ]; then
-            echo "::error::FEEDZ_SOURCE_URL repository variable is required to publish packages to the Feedz preview feed."
+          if [ -z "$FEEDZ_PREVIEW_SOURCE_URL" ]; then
+            echo "::error::FEEDZ_PREVIEW_SOURCE_URL repository variable is required to publish packages to the Feedz preview feed."
             exit 1
           fi
 
@@ -77,8 +77,8 @@ jobs:
       - name: Push package to Feedz
         run: >
           dotnet nuget push "$PACKAGE_OUTPUT/*.nupkg"
-          --api-key "$FEEDZ_API_KEY"
-          --source "$FEEDZ_SOURCE_URL"
+          --api-key "$FEEDZ_PREVIEW_API_KEY"
+          --source "$FEEDZ_PREVIEW_SOURCE_URL"
           --skip-duplicate
 
       - name: Push package to NuGet
