@@ -11,6 +11,9 @@ env:
   CONFIGURATION: Release
   PACKAGE_PROJECT: src/Loom/Loom.csproj
   PACKAGE_OUTPUT: artifacts/packages
+  FEEDZ_API_KEY: ${{ secrets.FEEDZ_API_KEY }}
+  FEEDZ_SOURCE_URL: ${{ vars.FEEDZ_SOURCE_URL }}
+  NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
 
 jobs:
   publish:
@@ -55,16 +58,17 @@ jobs:
           /p:VersionPrefix="$BASE_VERSION"
 
       - name: Push package to Feedz
+        if: env.FEEDZ_API_KEY != '' && env.FEEDZ_SOURCE_URL != ''
         run: >
           dotnet nuget push "$PACKAGE_OUTPUT/*.nupkg"
-          --api-key "${{ secrets.FEEDZ_API_KEY }}"
-          --source "${{ vars.FEEDZ_SOURCE_URL }}"
+          --api-key "$FEEDZ_API_KEY"
+          --source "$FEEDZ_SOURCE_URL"
           --skip-duplicate
 
       - name: Push package to NuGet
-        if: github.event_name == 'release'
+        if: github.event_name == 'release' && env.NUGET_API_KEY != ''
         run: >
           dotnet nuget push "$PACKAGE_OUTPUT/*.nupkg"
-          --api-key "${{ secrets.NUGET_API_KEY }}"
+          --api-key "$NUGET_API_KEY"
           --source "https://api.nuget.org/v3/index.json"
           --skip-duplicate
