@@ -9,4 +9,6 @@ public sealed class RecipeRunOptions
     public IServiceProvider? Services { get; init; }
 
     public IRecipeExecutionEventSink? EventSink { get; init; }
+
+    public RecipeInterpolationProviderRegistry? InterpolationProviders { get; init; }
 }

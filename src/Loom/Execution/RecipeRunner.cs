@@ -2,7 +2,7 @@ using System.Diagnostics;
 
 namespace Loom;
 
-internal sealed class RecipeRunner(StepHandlerRegistry handlers)
+internal sealed class RecipeRunner(StepHandlerRegistry handlers, RecipeInterpolationProviderRegistry interpolationProviders)
 {
     public async ValueTask<RecipeRunResult> RunAsync(
         Recipe recipe,
@@ -19,9 +19,10 @@ internal sealed class RecipeRunner(StepHandlerRegistry handlers)
         var validationOptions = new RecipeValidationOptions
         {
             VariableOverrides = options?.VariableOverrides,
-            Services = options?.Services
+            Services = options?.Services,
+            InterpolationProviders = options?.InterpolationProviders
         };
-        var validator = new RecipeValidator(handlers);
+        var validator = new RecipeValidator(handlers, interpolationProviders);
         diagnostics.AddRange(await validator.ValidateAsync(recipe, validationOptions, cancellationToken).ConfigureAwait(false));
         if (diagnostics.Any(diagnostic => diagnostic.IsError))
         {
@@ -48,9 +49,27 @@ internal sealed class RecipeRunner(StepHandlerRegistry handlers)
 
             try
             {
+                var interpolation = await RecipeInterpolationDelegator.ResolveAsync(
+                    recipe,
+                    step,
+                    variables,
+                    outputs.Outputs,
+                    options?.InterpolationProviders ?? interpolationProviders,
+                    options?.Services,
+                    cancellationToken).ConfigureAwait(false);
+                diagnostics.AddRange(interpolation.Diagnostics);
+                if (interpolation.Diagnostics.Any(diagnostic => diagnostic.IsError))
+                {
+                    var failedStep = new FailedRecipeStep(step.Id, step.Type, "Interpolation failed.");
+                    var completedAt = DateTimeOffset.UtcNow;
+                    await PublishAsync(options, new RecipeExecutionEvent(RecipeExecutionEventKind.StepFailed, completedAt, recipe.Identity, step.Id, step.Type, Message: failedStep.Reason), CancellationToken.None).ConfigureAwait(false);
+                    await PublishAsync(options, new RecipeExecutionEvent(RecipeExecutionEventKind.RecipeCompleted, completedAt, recipe.Identity, Status: RecipeRunStatus.ExecutionFailed), CancellationToken.None).ConfigureAwait(false);
+                    return new RecipeRunResult(RecipeRunStatus.ExecutionFailed, diagnostics, completedSteps, failedStep, failedStep.Reason, startedAt, completedAt);
+                }
+
                 var resolvedStep = step with
                 {
-                    Input = InterpolationResolver.Resolve(step.Input, variables, outputs.Outputs)
+                    Input = interpolation.ResolvedInput
                 };
                 var context = new RecipeExecutionContext(recipe, resolvedStep, state.ExecutionId, variables, outputs.Outputs, diagnostics, options?.Services);
                 var result = await handler.ExecuteAsync(resolvedStep, context, cancellationToken).ConfigureAwait(false);

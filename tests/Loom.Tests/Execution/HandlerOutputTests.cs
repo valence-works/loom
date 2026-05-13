@@ -8,8 +8,8 @@ public sealed class HandlerOutputTests
     public async Task Later_steps_can_use_previous_step_outputs()
     {
         var handler = new TestStepHandler();
-        var engine = RecipeEngine.Create().RegisterHandler(handler);
-        var recipe = RecipeBuilder.TwoStepRecipe(JsonNode.Parse("""{"name":"{{ steps.first.id }}"}"""));
+        var engine = RecipeEngine.Create().AddInterpolationProvider(new JintRecipeInterpolationProvider()).RegisterHandler(handler);
+        var recipe = RecipeBuilder.TwoStepRecipe(JsonNode.Parse("""{"name":"[js: output('first', 'id')]"}"""));
 
         var result = await engine.RunAsync(recipe, cancellationToken: TestContext.Current.CancellationToken);
 

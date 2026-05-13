@@ -26,6 +26,7 @@
     <ProjectReference Include="..\..\src\Loom.Sources.Embedded\Loom.Sources.Embedded.csproj" />
     <ProjectReference Include="..\..\src\Loom.Sources.FileSystem\Loom.Sources.FileSystem.csproj" />
     <ProjectReference Include="..\..\src\Loom.Sources.InMemory\Loom.Sources.InMemory.csproj" />
+    <ProjectReference Include="..\..\src\Loom.Interpolation.Jint\Loom.Interpolation.Jint.csproj" />
   </ItemGroup>
 
 </Project>
