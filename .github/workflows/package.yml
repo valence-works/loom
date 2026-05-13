@@ -21,6 +21,23 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      - name: Validate package publishing configuration
+        run: |
+          if [ -z "$FEEDZ_API_KEY" ]; then
+            echo "::error::FEEDZ_API_KEY secret is required to publish packages to the Feedz preview feed."
+            exit 1
+          fi
+
+          if [ -z "$FEEDZ_SOURCE_URL" ]; then
+            echo "::error::FEEDZ_SOURCE_URL repository variable is required to publish packages to the Feedz preview feed."
+            exit 1
+          fi
+
+          if [ "$GITHUB_EVENT_NAME" = "release" ] && [ -z "$NUGET_API_KEY" ]; then
+            echo "::error::NUGET_API_KEY secret is required to publish release packages to NuGet."
+            exit 1
+          fi
+
       - name: Checkout
         uses: actions/checkout@v4
 
@@ -58,7 +75,6 @@ jobs:
           /p:VersionPrefix="$BASE_VERSION"
 
       - name: Push package to Feedz
-        if: env.FEEDZ_API_KEY != '' && env.FEEDZ_SOURCE_URL != ''
         run: >
           dotnet nuget push "$PACKAGE_OUTPUT/*.nupkg"
           --api-key "$FEEDZ_API_KEY"
@@ -66,7 +82,7 @@ jobs:
           --skip-duplicate
 
       - name: Push package to NuGet
-        if: github.event_name == 'release' && env.NUGET_API_KEY != ''
+        if: github.event_name == 'release'
         run: >
           dotnet nuget push "$PACKAGE_OUTPUT/*.nupkg"
           --api-key "$NUGET_API_KEY"
