@@ -9,6 +9,7 @@ Consumers can declare a typed step with:
 - A CLR class annotated with `[Step("step-type")]`.
 - `IStep` for no-output execution.
 - `IStep<TOutput>` for output-producing execution.
+- Optional `IValidatingStep` for domain validation after typed input binding.
 - Public input properties for recipe `input`.
 - Optional constructor parameters resolved from host services.
 - Optional public service properties marked with `[StepService]`.
@@ -37,6 +38,13 @@ public interface IStep
 public interface IStep<TOutput>
 {
     ValueTask<TOutput> ExecuteAsync(StepContext context, CancellationToken cancellationToken = default);
+}
+
+public interface IValidatingStep
+{
+    ValueTask<IReadOnlyList<RecipeDiagnostic>> ValidateAsync(
+        StepValidationContext context,
+        CancellationToken cancellationToken = default);
 }
 ```
 
@@ -68,6 +76,32 @@ Required behavior:
 - `Log` is provider-neutral and must not require a telemetry package.
 - `CancellationToken` matches the token used by the current step execution.
 - Context contents mirror the existing execution context semantics.
+
+## Step Validation Context
+
+Typed steps that implement `IValidatingStep` receive a validation-focused context:
+
+```csharp
+public sealed class StepValidationContext
+{
+    public Recipe Recipe { get; }
+    public RecipeStep Step { get; }
+    public RecipeIdentity RecipeIdentity { get; }
+    public string? StepId { get; }
+    public IReadOnlyDictionary<string, JsonNode?> Variables { get; }
+    public IServiceProvider Services { get; }
+
+    public RecipeDiagnostic Error(string code, string message, string? target = null);
+    public RecipeDiagnostic Warning(string code, string message, string? target = null);
+    public string Target(string? field = null);
+}
+```
+
+Required behavior:
+
+- Binding diagnostics run before `IValidatingStep` validation.
+- `IValidatingStep` validation runs only when typed input binding succeeds.
+- The validating step instance receives the same bound input properties and host service activation model used during execution.
 
 ## Registration
 

@@ -179,6 +179,8 @@ As an application developer, I want typed-step registration and input binding fa
 - **FR-011**: Loom MUST report structured validation diagnostics for missing required input fields.
 - **FR-012**: Loom MUST report structured validation diagnostics for input values that cannot be converted to the target typed step model.
 - **FR-012a**: Loom MUST report structured validation diagnostics for typed-step input fields that do not bind to supported public input properties.
+- **FR-012b**: Loom MUST allow typed steps to opt into domain validation after successful input binding without making validation mandatory for every typed step.
+- **FR-012c**: Typed-step domain validation MUST receive a validation context with recipe metadata, step metadata, effective variables, host services, and diagnostic helpers.
 - **FR-013**: Loom MUST execute typed steps with access to a `StepContext` that includes the current recipe, current step metadata, effective variables, previous step outputs, diagnostics, execution metadata, cancellation, host services, and logging hooks where available.
 - **FR-014**: Loom MUST keep `StepContext` domain-neutral; domain-specific helpers such as `ctx.Users` are host/application concerns, not core Loom API.
 - **FR-015**: Loom MUST allow typed steps to receive host services through constructor injection without requiring Loom to own the service container.
@@ -214,6 +216,13 @@ public interface IStep
 public interface IStep<TOutput>
 {
     ValueTask<TOutput> ExecuteAsync(StepContext context, CancellationToken cancellationToken = default);
+}
+
+public interface IValidatingStep
+{
+    ValueTask<IReadOnlyList<RecipeDiagnostic>> ValidateAsync(
+        StepValidationContext context,
+        CancellationToken cancellationToken = default);
 }
 
 public sealed class StepContext

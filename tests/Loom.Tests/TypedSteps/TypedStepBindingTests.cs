@@ -72,7 +72,9 @@ public sealed class TypedStepBindingTests
     public async Task Validate_defers_interpolated_non_string_typed_step_input()
     {
         var recipe = NumericInterpolationRecipe();
-        var engine = RecipeEngine.Create().RegisterStep<NumericInputStep>();
+        var engine = RecipeEngine.Create()
+            .AddInterpolationProvider(new JintRecipeInterpolationProvider())
+            .RegisterStep<NumericInputStep>();
 
         var diagnostics = await engine.ValidateAsync(recipe, cancellationToken: TestContext.Current.CancellationToken);
 
@@ -84,7 +86,9 @@ public sealed class TypedStepBindingTests
     {
         NumericInputStep.CapturedCount = null;
         var recipe = NumericInterpolationRecipe();
-        var engine = RecipeEngine.Create().RegisterStep<NumericInputStep>();
+        var engine = RecipeEngine.Create()
+            .AddInterpolationProvider(new JintRecipeInterpolationProvider())
+            .RegisterStep<NumericInputStep>();
 
         var result = await engine.RunAsync(recipe, cancellationToken: TestContext.Current.CancellationToken);
 
@@ -121,7 +125,7 @@ public sealed class TypedStepBindingTests
     {
         return new Recipe(
             "numeric-interpolation",
-            [new RecipeStep("numeric-input", "step", JsonNode.Parse("""{"count":"{{ variables.count }}"}"""))],
+            [new RecipeStep("numeric-input", "step", JsonNode.Parse("""{"count":"[js: variables('count')]"}"""))],
             Variables: new Dictionary<string, JsonNode?>
             {
                 ["count"] = JsonNode.Parse("42")

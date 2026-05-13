@@ -7,11 +7,6 @@ internal static class StepInputBinder
 {
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
 
-    public static IReadOnlyList<RecipeDiagnostic> Validate(RecipeStep step, TypedStepDescriptor descriptor)
-    {
-        return Bind(step, descriptor).Diagnostics;
-    }
-
     public static void Apply(object instance, RecipeStep step, TypedStepDescriptor descriptor)
     {
         Apply(instance, Bind(step, descriptor));
@@ -46,6 +41,7 @@ internal static class StepInputBinder
     {
         List<RecipeDiagnostic> diagnostics = [];
         List<StepInputValue> values = [];
+        var hasDeferredValues = false;
         var inputProperties = descriptor.InputProperties.ToDictionary(property => property.JsonName, StringComparer.OrdinalIgnoreCase);
 
         foreach (var inputField in input)
@@ -70,6 +66,7 @@ internal static class StepInputBinder
 
             if (ContainsInterpolation(inputField.Value))
             {
+                hasDeferredValues = true;
                 continue;
             }
 
@@ -93,7 +90,7 @@ internal static class StepInputBinder
             }
         }
 
-        return new StepInputBinding(values, diagnostics);
+        return new StepInputBinding(values, diagnostics, hasDeferredValues);
     }
 
     private static bool TryGetProperty(JsonObject input, string jsonName, out JsonNode? value)
@@ -120,7 +117,7 @@ internal static class StepInputBinder
     {
         return value is JsonValue jsonValue
             && jsonValue.TryGetValue<string>(out var text)
-            && InterpolationParser.Parse(text).Count > 0;
+            && RecipeInterpolationDirectiveParser.Parse(text).Count > 0;
     }
 
     private static bool IsNullAllowed(Type targetType)
@@ -141,7 +138,8 @@ internal static class StepInputBinder
 
 internal sealed record StepInputBinding(
     IReadOnlyList<StepInputValue> Values,
-    IReadOnlyList<RecipeDiagnostic> Diagnostics);
+    IReadOnlyList<RecipeDiagnostic> Diagnostics,
+    bool HasDeferredValues = false);
 
 internal sealed record StepInputValue(
     System.Reflection.PropertyInfo Property,

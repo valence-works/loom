@@ -4,6 +4,7 @@ using Loom.Sample.Handlers;
 var recipePath = Path.Combine(AppContext.BaseDirectory, "Recipes", "initial-setup.json");
 
 var engine = RecipeEngine.Create()
+    .AddInterpolationProvider(new JintRecipeInterpolationProvider())
     .RegisterStep<CreateUserStep>()
     .RegisterHandler(new PrintStepHandler())
     .AddSource(new FileRecipeSource(recipePath, new JsonRecipeSerializer(), "sample-file"));
