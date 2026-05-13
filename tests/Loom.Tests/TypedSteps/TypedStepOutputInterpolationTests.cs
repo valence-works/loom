@@ -10,9 +10,10 @@ public sealed class TypedStepOutputInterpolationTests
         var handler = new CapturingHandler("direct");
         var recipe = new Recipe("typed-output", [
             new RecipeStep("output-source", "first"),
-            new RecipeStep("direct", Input: JsonNode.Parse("""{"value":"{{ steps.first.userId }}"}"""))
+            new RecipeStep("direct", Input: JsonNode.Parse("""{"value":"[js: output('first', 'userId')]"}"""))
         ]);
         var engine = RecipeEngine.Create()
+            .AddInterpolationProvider(new JintRecipeInterpolationProvider())
             .RegisterStep<OutputSourceStep>()
             .RegisterHandler(handler);
 

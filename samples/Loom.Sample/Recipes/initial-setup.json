@@ -9,7 +9,7 @@
       "id": "create-admin",
       "type": "create-user",
       "input": {
-        "email": "admin@{{ variables.tenant }}.local",
+        "email": "admin@[js: variables('tenant')].local",
         "role": "admin"
       }
     },
@@ -18,7 +18,7 @@
       "type": "print",
       "dependsOn": [ "create-admin" ],
       "input": {
-        "message": "Configured {{ steps.create-admin.email }}"
+        "message": "Configured [js: output('create-admin', 'email')]"
       }
     }
   ]

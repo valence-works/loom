@@ -63,13 +63,81 @@ var engine = RecipeEngine.Create()
 
 Recipe `input` binds to public properties using JSON web defaults. Constructors and `[StepService]` properties resolve from host services. Existing `IRecipeStepHandler` implementations remain supported for advanced or dynamic steps.
 
+Typed steps can opt into recipe validation by implementing `IValidatingStep`:
+
+```csharp
+[Step("create-user")]
+public sealed class CreateUserStep(IUserStore users) : IStep, IValidatingStep
+{
+    public required string Email { get; init; }
+
+    public ValueTask<IReadOnlyList<RecipeDiagnostic>> ValidateAsync(
+        StepValidationContext context,
+        CancellationToken cancellationToken = default)
+    {
+        return string.IsNullOrWhiteSpace(Email)
+            ? ValueTask.FromResult<IReadOnlyList<RecipeDiagnostic>>([
+                context.Error("USER_EMAIL_REQUIRED", "Email is required.", context.Target("input.email"))
+            ])
+            : ValueTask.FromResult<IReadOnlyList<RecipeDiagnostic>>([]);
+    }
+
+    public async ValueTask ExecuteAsync(StepContext context, CancellationToken cancellationToken = default)
+    {
+        await users.CreateAsync(new User(Email, "member"), cancellationToken);
+    }
+}
+```
+
+Loom runs typed-step binding validation first. If binding succeeds and the step implements `IValidatingStep`, Loom activates the step, applies bound input, and invokes `ValidateAsync`.
+
+### Interpolation Providers
+
+Interpolation is provider-based. Loom scans string values for `[prefix: expression]` directives, routes each directive to a registered `IRecipeInterpolationProvider`, and replaces the directive result before the step executes. Static recipes do not need a provider.
+
+The optional Jint provider uses the `js` prefix:
+
+```csharp
+var engine = RecipeEngine.Create()
+    .AddInterpolationProvider(new JintRecipeInterpolationProvider())
+    .RegisterStep<CreateUserStep>();
+```
+
+```json
+{
+  "name": "Initial Setup",
+  "variables": {
+    "tenant": "acme"
+  },
+  "steps": [
+    {
+      "id": "create-admin",
+      "type": "create-user",
+      "input": {
+        "email": "admin@[js: variables('tenant')].local"
+      }
+    },
+    {
+      "type": "print",
+      "input": {
+        "message": "Configured [js: output('create-admin', 'email')]"
+      }
+    }
+  ]
+}
+```
+
+`variables(name)` reads the effective recipe variable set. `output(stepId, name)` reads output from a previously completed step. Old `{{ variables.name }}` and `{{ steps.stepId.name }}` syntax is not supported by the built-in provider pipeline unless a host registers a provider that implements that syntax.
+
 ## Public Concepts
 
 - `Recipe`: Declarative definition with identity, variables, and ordered steps.
 - `RecipeStep`: A typed unit of work with optional ID, input, and dependencies that must point to earlier steps.
 - `IRecipeStepHandler`: Host-owned validation and execution behavior for one step type.
 - `IStep` / `IStep<TOutput>`: Typed custom step contracts for property-bound recipe input.
+- `IValidatingStep`: Optional typed-step validation hook after input binding succeeds.
 - `StepContext`: Typed-step context with recipe metadata, variables, previous outputs, services, diagnostics, and cancellation.
+- `StepValidationContext`: Typed-step validation context with recipe metadata, variables, services, and diagnostic helpers.
 - `RecipeEngine`: Public coordinator for sources, validation, handler resolution, and execution.
 - `RecipeExecutionContext`: Per-run context with variables, outputs, services, diagnostics, and run metadata.
 - `RecipeRunResult`: Safe structured status, timing, completed steps, failed step, and diagnostics.

@@ -51,6 +51,7 @@ Notes:
 - `Role` is optional and defaults to `"member"`.
 - Recipe input never binds to constructor parameters.
 - A service property must be explicitly marked with `[StepService]` if property injection is used.
+- Implement `IValidatingStep` when the typed step needs domain validation after input binding.
 
 Property injection is explicit so service dependencies cannot be confused with recipe input:
 
@@ -70,7 +71,36 @@ public sealed class NotifyUserStep : IStep
 }
 ```
 
-## 3. Register Typed Steps
+## 3. Add Domain Validation
+
+Typed steps can opt into validation without forcing every step to implement a validation method:
+
+```csharp
+[Step("create-user")]
+public sealed class CreateUserStep(IUserStore users) : IStep, IValidatingStep
+{
+    public required string Email { get; init; }
+
+    public async ValueTask<IReadOnlyList<RecipeDiagnostic>> ValidateAsync(
+        StepValidationContext context,
+        CancellationToken cancellationToken = default)
+    {
+        var existing = await users.FindAsync(Email, cancellationToken);
+        return existing is not null
+            ? [context.Error("USER_EXISTS", "User already exists.", context.Target("input.email"))]
+            : [];
+    }
+
+    public ValueTask ExecuteAsync(StepContext context, CancellationToken cancellationToken = default)
+    {
+        return users.CreateAsync(new User(Email, "member"), cancellationToken);
+    }
+}
+```
+
+Loom validates typed-step binding first. If binding succeeds and the step implements `IValidatingStep`, Loom activates the step, applies bound input, and invokes `ValidateAsync`.
+
+## 4. Register Typed Steps
 
 Register a typed step explicitly:
 
@@ -88,7 +118,7 @@ var engine = RecipeEngine.Create()
 
 Duplicate step type registrations fail at registration time.
 
-## 4. Define Recipe Input
+## 5. Define Recipe Input
 
 The serialized recipe shape does not change.
 
@@ -116,7 +146,7 @@ Binding rules:
 - Missing `required` input fields fail validation.
 - Invalid value conversions fail validation.
 
-## 5. Produce Typed Output
+## 6. Produce Typed Output
 
 Use `IStep<TOutput>` when later steps need output.
 
@@ -140,7 +170,7 @@ public sealed class CreateUserStep(IUserStore users) : IStep<CreateUserOutput>
 
 Output properties are exposed through the existing step output store and remain redacted in safe run results.
 
-## 6. Mix With Existing Handlers
+## 7. Mix With Existing Handlers
 
 Direct handlers remain valid:
 
@@ -152,7 +182,7 @@ var engine = RecipeEngine.Create()
 
 Both registration styles participate in the same validation and execution pipeline.
 
-## 7. Verify With Tests
+## 8. Verify With Tests
 
 Run from the repository root:
 
@@ -168,6 +198,7 @@ Recommended behavior tests:
 - Missing required input fails validation before execution.
 - Unknown input fields fail validation before execution.
 - Invalid input conversions fail validation before execution.
+- `IValidatingStep` validation runs after successful typed input binding.
 - Constructor injection resolves host services.
 - `[StepService]` property injection resolves host services.
 - `IStep` returns an empty execution result.
