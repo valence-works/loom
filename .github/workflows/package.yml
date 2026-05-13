@@ -63,7 +63,7 @@ jobs:
           --configuration "$CONFIGURATION"
           --output "$PACKAGE_OUTPUT"
           /p:VersionPrefix="$BASE_VERSION"
-          /p:VersionSuffix="Loom-preview.${{ github.run_number }}"
+          /p:VersionSuffix="preview.${{ github.run_number }}"
 
       - name: Pack release package
         if: github.event_name == 'release'
