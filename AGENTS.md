@@ -66,4 +66,5 @@ dotnet test --no-build --configuration Release
 - N/A for engine state; interpolation operates over in-memory recipe input, variables, and completed step output dictionaries (002-abstract-interpolation)
 
 ## Recent Changes
+- 002-typed-step-authoring: Added C# latest, .NET 10 (`net10.0`) + .NET base libraries, `System.Text.Json`, reflection APIs, and `IServiceProvider`; no new package dependency required for the initial activator
 - 001-loom-recipe-engine: Added C# latest, .NET 10 (`net10.0`) + .NET base libraries and `System.Text.Json`; optional standard DI abstractions only if needed for host-controlled scoped handler/service integration

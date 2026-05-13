@@ -6,18 +6,19 @@
   },
   "steps": [
     {
-      "id": "capture-tenant",
-      "type": "capture",
+      "id": "create-admin",
+      "type": "create-user",
       "input": {
-        "value": "{{ variables.tenant }}"
+        "email": "admin@{{ variables.tenant }}.local",
+        "role": "admin"
       }
     },
     {
       "id": "print-summary",
       "type": "print",
-      "dependsOn": [ "capture-tenant" ],
+      "dependsOn": [ "create-admin" ],
       "input": {
-        "message": "Configured tenant {{ steps.capture-tenant.value }}"
+        "message": "Configured {{ steps.create-admin.email }}"
       }
     }
   ]

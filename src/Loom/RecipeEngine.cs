@@ -1,3 +1,5 @@
+using System.Reflection;
+
 namespace Loom;
 
 public sealed class RecipeEngine
@@ -11,6 +13,23 @@ public sealed class RecipeEngine
     public RecipeEngine RegisterHandler(IRecipeStepHandler handler)
     {
         _handlers.Register(handler);
+        return this;
+    }
+
+    public RecipeEngine RegisterStep<TStep>()
+    {
+        var descriptor = TypedStepDescriptorFactory.Create(typeof(TStep));
+        _handlers.Register(new TypedStepAdapter(descriptor));
+        return this;
+    }
+
+    public RecipeEngine RegisterStepsFromAssembly(Assembly assembly)
+    {
+        foreach (var descriptor in TypedStepDescriptorFactory.CreateFromAssembly(assembly))
+        {
+            _handlers.Register(new TypedStepAdapter(descriptor));
+        }
+
         return this;
     }
 

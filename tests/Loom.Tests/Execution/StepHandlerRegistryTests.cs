@@ -13,4 +13,14 @@ public sealed class StepHandlerRegistryTests
         Assert.True(result.Succeeded);
         Assert.Equal(["step"], handler.Calls);
     }
+
+    [Fact]
+    public void Engine_rejects_duplicate_handler_step_type()
+    {
+        var engine = RecipeEngine.Create().RegisterHandler(new TestStepHandler("custom"));
+
+        var exception = Assert.Throws<ArgumentException>(() => engine.RegisterHandler(new TestStepHandler("custom")));
+
+        Assert.Contains("custom", exception.Message, StringComparison.Ordinal);
+    }
 }

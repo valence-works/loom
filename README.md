@@ -33,11 +33,43 @@ var catalog = await engine.DiscoverAsync();
 var result = await engine.RunAsync(catalog.Recipes.Single());
 ```
 
+### Typed Step Usage
+
+For straightforward custom steps, define a typed step class and register it directly:
+
+```csharp
+[Step("create-user")]
+public sealed class CreateUserStep(IUserStore users) : IStep
+{
+    public required string Email { get; init; }
+
+    public string Role { get; init; } = "member";
+
+    public async ValueTask ExecuteAsync(StepContext context, CancellationToken cancellationToken = default)
+    {
+        if (await users.FindAsync(Email, cancellationToken) is not null)
+        {
+            return;
+        }
+
+        await users.CreateAsync(new User(Email, Role), cancellationToken);
+        context.Log("user created", new { Email });
+    }
+}
+
+var engine = RecipeEngine.Create()
+    .RegisterStep<CreateUserStep>();
+```
+
+Recipe `input` binds to public properties using JSON web defaults. Constructors and `[StepService]` properties resolve from host services. Existing `IRecipeStepHandler` implementations remain supported for advanced or dynamic steps.
+
 ## Public Concepts
 
 - `Recipe`: Declarative definition with identity, variables, and ordered steps.
 - `RecipeStep`: A typed unit of work with optional ID, input, and dependencies that must point to earlier steps.
 - `IRecipeStepHandler`: Host-owned validation and execution behavior for one step type.
+- `IStep` / `IStep<TOutput>`: Typed custom step contracts for property-bound recipe input.
+- `StepContext`: Typed-step context with recipe metadata, variables, previous outputs, services, diagnostics, and cancellation.
 - `RecipeEngine`: Public coordinator for sources, validation, handler resolution, and execution.
 - `RecipeExecutionContext`: Per-run context with variables, outputs, services, diagnostics, and run metadata.
 - `RecipeRunResult`: Safe structured status, timing, completed steps, failed step, and diagnostics.
