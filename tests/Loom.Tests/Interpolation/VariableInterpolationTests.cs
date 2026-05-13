@@ -9,8 +9,8 @@ public sealed class VariableInterpolationTests
     public async Task RunAsync_resolves_variable_interpolation()
     {
         var handler = new TestStepHandler();
-        var recipe = RecipeBuilder.TwoStepRecipe(JsonNode.Parse("""{"name":"{{ variables.tenant }}"}"""));
-        var engine = RecipeEngine.Create().RegisterHandler(handler);
+        var recipe = RecipeBuilder.TwoStepRecipe(JsonNode.Parse("""{"name":"[js: variables('tenant')]"}"""));
+        var engine = RecipeEngine.Create().AddInterpolationProvider(new JintRecipeInterpolationProvider()).RegisterHandler(handler);
 
         await engine.RunAsync(recipe, cancellationToken: TestContext.Current.CancellationToken);
 

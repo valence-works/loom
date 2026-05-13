@@ -4,6 +4,7 @@ public sealed class RecipeEngine
 {
     private readonly StepHandlerRegistry _handlers = new();
     private readonly List<IRecipeSource> _sources = [];
+    private RecipeInterpolationProviderRegistry _interpolationProviders = RecipeInterpolationProviderRegistry.Empty;
 
     public static RecipeEngine Create() => new();
 
@@ -19,12 +20,18 @@ public sealed class RecipeEngine
         return this;
     }
 
+    public RecipeEngine AddInterpolationProvider(IRecipeInterpolationProvider provider)
+    {
+        _interpolationProviders = _interpolationProviders.Add(provider);
+        return this;
+    }
+
     public ValueTask<IReadOnlyList<RecipeDiagnostic>> ValidateAsync(
         Recipe recipe,
         RecipeValidationOptions? options = null,
         CancellationToken cancellationToken = default)
     {
-        var validator = new RecipeValidator(_handlers);
+        var validator = new RecipeValidator(_handlers, _interpolationProviders);
         return validator.ValidateAsync(recipe, options, cancellationToken);
     }
 
@@ -33,7 +40,7 @@ public sealed class RecipeEngine
         RecipeRunOptions? options = null,
         CancellationToken cancellationToken = default)
     {
-        var runner = new RecipeRunner(_handlers);
+        var runner = new RecipeRunner(_handlers, _interpolationProviders);
         return runner.RunAsync(recipe, options, cancellationToken);
     }
 

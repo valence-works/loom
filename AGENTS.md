@@ -62,6 +62,8 @@ dotnet test --no-build --configuration Release
 ## Active Technologies
 - C# latest, .NET 10 (`net10.0`) + .NET base libraries and `System.Text.Json`; optional standard DI abstractions only if needed for host-controlled scoped handler/service integration (001-loom-recipe-engine)
 - N/A for engine state; JSON recipe files and embedded JSON resources for recipe source inputs (001-loom-recipe-engine)
+- C# latest, .NET 10 (`net10.0`) + .NET base libraries, `System.Text.Json`, existing Loom abstractions, and Jint for the initial JavaScript-compatible interpolation provider (002-abstract-interpolation)
+- N/A for engine state; interpolation operates over in-memory recipe input, variables, and completed step output dictionaries (002-abstract-interpolation)
 
 ## Recent Changes
 - 001-loom-recipe-engine: Added C# latest, .NET 10 (`net10.0`) + .NET base libraries and `System.Text.Json`; optional standard DI abstractions only if needed for host-controlled scoped handler/service integration

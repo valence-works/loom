@@ -29,7 +29,7 @@ V1 serialized recipes use JSON only.
       "dependsOn": ["create-admin"],
       "input": {
         "feature": "Workflows",
-        "tenant": "{{ variables.tenantId }}"
+        "tenant": "[js: variables('tenantId')]"
       }
     }
   ]
@@ -48,7 +48,7 @@ V1 serialized recipes use JSON only.
 - `description`: Optional string.
 - `metadata`: Optional object.
 - `variables`: Optional object.
-- `steps[].id`: Optional string. Required when referenced by `dependsOn` or previous-output interpolation.
+- `steps[].id`: Optional string. Required when referenced by `dependsOn` or by provider-specific interpolation.
 - `steps[].dependsOn`: Optional array of step IDs. Validation-only in V1.
 - `steps[].input`: Optional object containing handler-owned input.
 
@@ -67,28 +67,29 @@ V1 serialized recipes use JSON only.
 
 ## Interpolation Rules
 
-Supported V1 examples:
+Interpolation uses host-registered providers selected by a prefixed directive envelope. Loom owns the `[prefix: expression]` envelope and routes the expression to the provider registered for `prefix`; the provider owns the expression syntax.
+
+Initial Jint provider examples:
 
 ```json
 {
-  "tenant": "{{ variables.tenantId }}",
-  "adminId": "{{ steps.create-admin.id }}"
+  "tenant": "[js: variables('tenantId')]",
+  "adminId": "[js: output('create-admin', 'id')]"
 }
 ```
 
 Required behavior:
 
-- Variables are referenced through `variables.<name>`.
-- Previous step outputs are referenced through `steps.<stepId>.<outputName>`.
-- Step output references require the referenced step to have an ID.
-- Missing variables or step outputs produce diagnostics.
+- Host code registers available interpolation providers; recipe JSON can only reference registered prefixes.
+- Unknown prefixes produce diagnostics before execution where practical.
+- Provider validation failures, missing values, unsupported expressions, and resolution failures produce diagnostics.
+- The initial `js` provider exposes `variables(name)` and `output(stepId, name)` helpers.
 
 Identifier constraints:
 
-- Variable names, step IDs used in interpolation, and output names referenced by interpolation must match `^[A-Za-z_][A-Za-z0-9_-]*$`.
-- `.` is not allowed inside variable names, step IDs used in interpolation, or output names referenced by interpolation because `.` is the V1 path delimiter.
-- V1 does not support escaping or bracket syntax for interpolation paths. Recipes needing delimiter-like characters in display names should keep those values in metadata or handler-owned input, not in interpolation identifiers.
-- Step IDs referenced by `dependsOn` must follow the same identifier rule, so dependency and interpolation references share one identifier model.
+- Provider prefixes must match `^[A-Za-z][A-Za-z0-9_-]*$` and are case-insensitive unique within a registry.
+- Step IDs referenced by `dependsOn` must match `^[A-Za-z_][A-Za-z0-9_-]*$`.
+- Provider-specific variable, step ID, or output-name constraints are owned by the registered provider.
 
 Out of scope for V1:
 

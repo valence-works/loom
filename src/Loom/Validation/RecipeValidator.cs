@@ -1,6 +1,6 @@
 namespace Loom;
 
-internal sealed class RecipeValidator(StepHandlerRegistry handlers)
+internal sealed class RecipeValidator(StepHandlerRegistry handlers, RecipeInterpolationProviderRegistry interpolationProviders)
 {
     public async ValueTask<IReadOnlyList<RecipeDiagnostic>> ValidateAsync(
         Recipe recipe,
@@ -12,7 +12,12 @@ internal sealed class RecipeValidator(StepHandlerRegistry handlers)
         diagnostics.AddRange(DependencyValidator.Validate(recipe));
 
         var variables = EffectiveVariableSet.Create(recipe.Variables, options?.VariableOverrides);
-        diagnostics.AddRange(InterpolationResolver.Validate(recipe, variables));
+        diagnostics.AddRange(await RecipeInterpolationDelegator.ValidateAsync(
+            recipe,
+            variables,
+            options?.InterpolationProviders ?? interpolationProviders,
+            options?.Services,
+            cancellationToken).ConfigureAwait(false));
 
         var context = new RecipeValidationContext(recipe, variables, options?.Services);
         foreach (var step in recipe.Steps.Where(step => !string.IsNullOrWhiteSpace(step.Type)))
