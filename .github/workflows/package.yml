@@ -9,7 +9,6 @@ on:
 env:
   BASE_VERSION: "0.0.1"
   CONFIGURATION: Release
-  PACKAGE_PROJECT: src/Loom/Loom.csproj
   PACKAGE_OUTPUT: artifacts/packages
   FEEDZ_PREVIEW_API_KEY: ${{ secrets.FEEDZ_PREVIEW_API_KEY }}
   FEEDZ_PREVIEW_SOURCE_URL: ${{ vars.FEEDZ_PREVIEW_SOURCE_URL }}
@@ -55,24 +54,28 @@ jobs:
       - name: Test
         run: dotnet test --no-build --configuration "$CONFIGURATION"
 
-      - name: Pack preview package
+      - name: Pack preview packages
         if: github.event_name == 'push'
-        run: >
-          dotnet pack "$PACKAGE_PROJECT"
-          --no-build
-          --configuration "$CONFIGURATION"
-          --output "$PACKAGE_OUTPUT"
-          /p:VersionPrefix="$BASE_VERSION"
-          /p:VersionSuffix="preview.${{ github.run_number }}"
+        run: |
+          for project in src/Loom*/*.csproj; do
+            dotnet pack "$project" \
+              --no-build \
+              --configuration "$CONFIGURATION" \
+              --output "$PACKAGE_OUTPUT" \
+              /p:VersionPrefix="$BASE_VERSION" \
+              /p:VersionSuffix="preview.${{ github.run_number }}"
+          done
 
-      - name: Pack release package
+      - name: Pack release packages
         if: github.event_name == 'release'
-        run: >
-          dotnet pack "$PACKAGE_PROJECT"
-          --no-build
-          --configuration "$CONFIGURATION"
-          --output "$PACKAGE_OUTPUT"
-          /p:VersionPrefix="$BASE_VERSION"
+        run: |
+          for project in src/Loom*/*.csproj; do
+            dotnet pack "$project" \
+              --no-build \
+              --configuration "$CONFIGURATION" \
+              --output "$PACKAGE_OUTPUT" \
+              /p:VersionPrefix="$BASE_VERSION"
+          done
 
       - name: Push package to Feedz
         run: >
