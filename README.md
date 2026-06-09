@@ -8,7 +8,7 @@ A lightweight .NET recipe engine for composing, provisioning, and configuring ap
 
 ### Prerequisites
 
-- [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0) or later
+- [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0) or later. Loom packages target `net8.0`, `net9.0`, and `net10.0`.
 
 ### Build
 
