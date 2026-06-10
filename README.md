@@ -63,7 +63,59 @@ var engine = RecipeEngine.Create()
 
 Recipe `input` binds to public properties using JSON web defaults. Constructors and `[StepService]` properties resolve from host services. Existing `IRecipeStepHandler` implementations remain supported for advanced or dynamic steps.
 
-Typed steps can opt into recipe validation by implementing `IValidatingStep`:
+For non-trivial validation, keep the executable step focused on execution and put validation in a separate validator:
+
+```csharp
+[Step("create-user")]
+[StepValidator(typeof(CreateUserStepValidator))]
+public sealed class CreateUserStep(IUserStore users) : IStep
+{
+    public required string Email { get; init; }
+
+    public string Role { get; init; } = "member";
+
+    public async ValueTask ExecuteAsync(StepContext context, CancellationToken cancellationToken = default)
+    {
+        await users.CreateAsync(new User(Email, Role), cancellationToken);
+    }
+}
+
+public sealed class CreateUserStepValidator(IUserStore users) : IStepValidator<CreateUserStep>
+{
+    public async ValueTask<IReadOnlyList<RecipeDiagnostic>> ValidateAsync(
+        CreateUserStep step,
+        StepValidationContext context,
+        CancellationToken cancellationToken = default)
+    {
+        List<RecipeDiagnostic> diagnostics = [];
+
+        if (string.IsNullOrWhiteSpace(step.Email))
+        {
+            diagnostics.Add(context.Error(
+                "USER_EMAIL_REQUIRED",
+                "Email is required.",
+                context.Target("input.email")));
+        }
+
+        if (await users.FindAsync(step.Email, cancellationToken) is not null)
+        {
+            diagnostics.Add(context.Error(
+                "USER_EMAIL_EXISTS",
+                "A user with this email already exists.",
+                context.Target("input.email")));
+        }
+
+        return diagnostics;
+    }
+}
+
+var engine = RecipeEngine.Create()
+    .RegisterStep<CreateUserStep, CreateUserStepValidator>();
+```
+
+Validator constructors and `[StepService]` properties resolve from the same host services as typed steps. `[StepValidator]` is also honored by `RegisterStep<TStep>()` and `RegisterStepsFromAssembly(...)`.
+
+Small steps can still opt into inline validation by implementing `IValidatingStep`:
 
 ```csharp
 [Step("create-user")]
@@ -89,7 +141,7 @@ public sealed class CreateUserStep(IUserStore users) : IStep, IValidatingStep
 }
 ```
 
-Loom runs typed-step binding validation first. If binding succeeds and the step implements `IValidatingStep`, Loom activates the step, applies bound input, and invokes `ValidateAsync`.
+Loom runs typed-step binding validation first. If binding succeeds and the input has no deferred interpolation directives, Loom applies bound input and runs external `IStepValidator<TStep>` validation before inline `IValidatingStep` validation. Binding errors or deferred interpolation skip both typed-domain validation paths because the typed values are not reliable yet.
 
 ### Interpolation Providers
 
@@ -135,7 +187,9 @@ var engine = RecipeEngine.Create()
 - `RecipeStep`: A typed unit of work with optional ID, input, and dependencies that must point to earlier steps.
 - `IRecipeStepHandler`: Host-owned validation and execution behavior for one step type.
 - `IStep` / `IStep<TOutput>`: Typed custom step contracts for property-bound recipe input.
-- `IValidatingStep`: Optional typed-step validation hook after input binding succeeds.
+- `IStepValidator<TStep>`: Preferred external typed-step validation contract after input binding succeeds.
+- `StepValidatorAttribute`: Metadata that associates a typed step with an external validator for direct registration or assembly scanning.
+- `IValidatingStep`: Optional inline typed-step validation hook for small compatibility-friendly validators.
 - `StepContext`: Typed-step context with recipe metadata, variables, previous outputs, services, diagnostics, and cancellation.
 - `StepValidationContext`: Typed-step validation context with recipe metadata, variables, services, and diagnostic helpers.
 - `RecipeEngine`: Public coordinator for sources, validation, handler resolution, and execution.

@@ -10,9 +10,10 @@ internal sealed class TypedStepAdapter(TypedStepDescriptor descriptor) : IRecipe
         CancellationToken cancellationToken = default)
     {
         var binding = StepInputBinder.Bind(step, descriptor);
+        var hasInlineValidation = typeof(IValidatingStep).IsAssignableFrom(descriptor.StepType);
         if (binding.Diagnostics.Any(diagnostic => diagnostic.IsError)
             || binding.HasDeferredValues
-            || !typeof(IValidatingStep).IsAssignableFrom(descriptor.StepType))
+            || (descriptor.Validator is null && !hasInlineValidation))
         {
             return binding.Diagnostics;
         }
@@ -28,9 +29,25 @@ internal sealed class TypedStepAdapter(TypedStepDescriptor descriptor) : IRecipe
                 context.Variables,
                 services);
 
-            return await ((IValidatingStep)instance)
-                .ValidateAsync(stepContext, cancellationToken)
-                .ConfigureAwait(false);
+            List<RecipeDiagnostic> diagnostics = [..binding.Diagnostics];
+            if (descriptor.Validator is not null)
+            {
+                diagnostics.AddRange(await ValidateExternalAsync(
+                    descriptor.Validator,
+                    instance,
+                    stepContext,
+                    step,
+                    cancellationToken).ConfigureAwait(false));
+            }
+
+            if (hasInlineValidation)
+            {
+                diagnostics.AddRange(await ((IValidatingStep)instance)
+                    .ValidateAsync(stepContext, cancellationToken)
+                    .ConfigureAwait(false));
+            }
+
+            return diagnostics;
         }
         catch (Exception exception) when (exception is not OperationCanceledException)
         {
@@ -87,6 +104,29 @@ internal sealed class TypedStepAdapter(TypedStepDescriptor descriptor) : IRecipe
         return RecipeStepExecutionResult.Empty;
     }
 
+    private static async ValueTask<IReadOnlyList<RecipeDiagnostic>> ValidateExternalAsync(
+        TypedStepValidatorDescriptor validatorDescriptor,
+        object stepInstance,
+        StepValidationContext context,
+        RecipeStep step,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            var validator = TypedStepActivator.Create(validatorDescriptor, context.Services);
+            return await validatorDescriptor.Validator(validator, stepInstance, context, cancellationToken)
+                .ConfigureAwait(false);
+        }
+        catch (Exception exception) when (exception is not OperationCanceledException)
+        {
+            return [RecipeDiagnosticFactory.Error(
+                "LOOM_TYPED_STEP_VALIDATOR_FAILED",
+                $"Typed step validator '{validatorDescriptor.ValidatorType.FullName}' validation failed.",
+                Target(step),
+                exception)];
+        }
+    }
+
     private static void Log(IReadOnlyList<RecipeDiagnostic> diagnostics, RecipeStep step, string message)
     {
         if (diagnostics is not List<RecipeDiagnostic> mutableDiagnostics)
@@ -100,4 +140,6 @@ internal sealed class TypedStepAdapter(TypedStepDescriptor descriptor) : IRecipe
             message,
             step.Id is null ? $"step:{step.Type}.log" : $"step:{step.Id}.log"));
     }
+
+    private static string Target(RecipeStep step) => step.Id is null ? $"step:{step.Type}" : $"step:{step.Id}";
 }
