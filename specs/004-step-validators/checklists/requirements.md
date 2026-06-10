@@ -6,9 +6,9 @@
 
 ## Content Quality
 
-- [x] No implementation details (languages, frameworks, APIs)
-- [x] Focused on user value and business needs
-- [x] Written for non-technical stakeholders
+- [x] Public API terms are intentional feature surface, not incidental implementation details
+- [x] Focused on typed step author and host application developer value
+- [x] Written for technical library consumers and maintainers
 - [x] All mandatory sections completed
 
 ## Requirement Completeness
@@ -27,8 +27,8 @@
 - [x] All functional requirements have clear acceptance criteria
 - [x] User scenarios cover primary flows
 - [x] Feature meets measurable outcomes defined in Success Criteria
-- [x] No implementation details leak into specification
+- [x] No incidental implementation details leak into specification
 
 ## Notes
 
-- Reviewed against the generated spec on 2026-06-10. The feature is ready for planning.
+- Reviewed against the generated spec on 2026-06-10. The checklist language was adjusted for a developer-facing public API feature where contract names are part of the user-visible product surface.

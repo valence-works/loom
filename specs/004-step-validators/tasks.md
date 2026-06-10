@@ -109,8 +109,8 @@ Public API changes require tests or documentation that demonstrate intended usag
 - [X] T025 [P] Update typed-step validation guidance and public concepts in `README.md`
 - [X] T026 [P] Update `specs/004-step-validators/contracts/public-api.md` if implementation API names differ from the planned contract
 - [X] T027 [P] Update `specs/004-step-validators/quickstart.md` if implementation examples differ from final usage
-- [X] T028 Run `dotnet build` from `/Users/sipke/.codex/worktrees/1f10/loom`
-- [X] T029 Run `dotnet test` from `/Users/sipke/.codex/worktrees/1f10/loom`
+- [X] T028 Run `dotnet build` from the repository root
+- [X] T029 Run `dotnet test` from the repository root
 - [X] T030 Perform a self-review of changed code and specs for critical correctness, compatibility, diagnostics, and constitution issues
 
 ## Dependencies & Execution Order
