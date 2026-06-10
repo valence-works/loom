@@ -6,6 +6,8 @@ public sealed class RecipeEngine
 {
     private readonly StepHandlerRegistry _handlers = new();
     private readonly List<IRecipeSource> _sources = [];
+    private readonly Dictionary<Type, Type> _stepValidators = [];
+    private readonly Dictionary<Type, string> _registeredTypedSteps = [];
     private RecipeInterpolationProviderRegistry _interpolationProviders = RecipeInterpolationProviderRegistry.Empty;
 
     public static RecipeEngine Create() => new();
@@ -18,16 +20,65 @@ public sealed class RecipeEngine
 
     public RecipeEngine RegisterStep<TStep>()
     {
-        var descriptor = TypedStepDescriptorFactory.Create(typeof(TStep));
+        var stepType = typeof(TStep);
+        var descriptor = TypedStepDescriptorFactory.Create(stepType, _stepValidators.GetValueOrDefault(stepType));
         _handlers.Register(new TypedStepAdapter(descriptor));
+        _registeredTypedSteps[stepType] = descriptor.RecipeStepType;
+        return this;
+    }
+
+    public RecipeEngine RegisterStep<TStep, TValidator>()
+        where TValidator : IStepValidator<TStep>
+    {
+        var stepType = typeof(TStep);
+        var validatorType = typeof(TValidator);
+        TypedStepDescriptorFactory.ValidateValidator(stepType, validatorType);
+
+        var hadPreviousValidator = _stepValidators.TryGetValue(stepType, out var previousValidator);
+        _stepValidators[stepType] = validatorType;
+        try
+        {
+            return RegisterStep<TStep>();
+        }
+        catch
+        {
+            if (hadPreviousValidator)
+            {
+                _stepValidators[stepType] = previousValidator!;
+            }
+            else
+            {
+                _stepValidators.Remove(stepType);
+            }
+
+            throw;
+        }
+    }
+
+    public RecipeEngine RegisterStepValidator<TStep, TValidator>()
+        where TValidator : IStepValidator<TStep>
+    {
+        var stepType = typeof(TStep);
+        var validatorType = typeof(TValidator);
+        TypedStepDescriptorFactory.ValidateValidator(stepType, validatorType);
+        _stepValidators[stepType] = validatorType;
+
+        if (_registeredTypedSteps.ContainsKey(stepType))
+        {
+            var descriptor = TypedStepDescriptorFactory.Create(stepType, validatorType);
+            _handlers.Replace(new TypedStepAdapter(descriptor));
+            _registeredTypedSteps[stepType] = descriptor.RecipeStepType;
+        }
+
         return this;
     }
 
     public RecipeEngine RegisterStepsFromAssembly(Assembly assembly)
     {
-        foreach (var descriptor in TypedStepDescriptorFactory.CreateFromAssembly(assembly))
+        foreach (var descriptor in TypedStepDescriptorFactory.CreateFromAssembly(assembly, _stepValidators))
         {
             _handlers.Register(new TypedStepAdapter(descriptor));
+            _registeredTypedSteps[descriptor.StepType] = descriptor.RecipeStepType;
         }
 
         return this;

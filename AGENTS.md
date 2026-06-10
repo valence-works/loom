@@ -64,6 +64,7 @@ dotnet test --no-build --configuration Release
 - N/A for engine state; JSON recipe files and embedded JSON resources for recipe source inputs (001-loom-recipe-engine)
 - C# latest, .NET 10 (`net10.0`) + .NET base libraries, `System.Text.Json`, existing Loom abstractions, and Jint for the initial JavaScript-compatible interpolation provider (002-abstract-interpolation)
 - N/A for engine state; interpolation operates over in-memory recipe input, variables, and completed step output dictionaries (002-abstract-interpolation)
+- C# latest; .NET multi-targeting `net8.0`, `net9.0`, and `net10.0` + .NET base libraries, `System.Text.Json`, reflection APIs, existing `IServiceProvider` service model (004-step-validators)
 
 ## Recent Changes
 - 002-typed-step-authoring: Added C# latest, .NET 10 (`net10.0`) + .NET base libraries, `System.Text.Json`, reflection APIs, and `IServiceProvider`; no new package dependency required for the initial activator
