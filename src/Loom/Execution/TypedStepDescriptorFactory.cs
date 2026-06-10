@@ -157,7 +157,7 @@ internal static class TypedStepDescriptorFactory
             return null;
         }
 
-        if (validatorType is { IsAbstract: true } or { IsInterface: true } || validatorType.ContainsGenericParameters)
+        if (!validatorType.IsClass || validatorType.IsAbstract || validatorType.ContainsGenericParameters)
         {
             throw new ArgumentException($"Typed step validator '{validatorType.FullName}' for typed step '{stepType.FullName}' must be a non-abstract closed class.", nameof(validatorType));
         }

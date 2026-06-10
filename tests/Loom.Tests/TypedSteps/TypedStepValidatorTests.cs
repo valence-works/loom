@@ -192,6 +192,32 @@ public sealed class TypedStepValidatorTests
     }
 
     [Fact]
+    public void RegisterStep_rejects_struct_validator_with_class_message()
+    {
+        var exception = Assert.Throws<ArgumentException>(() =>
+            RecipeEngine.Create().RegisterStep<StructValidatedStep, StructValidator>());
+
+        Assert.Contains("non-abstract closed class", exception.Message, StringComparison.Ordinal);
+        Assert.Contains(nameof(StructValidator), exception.Message, StringComparison.Ordinal);
+        Assert.Contains(nameof(StructValidatedStep), exception.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task RegisterStep_rolls_back_validator_mapping_when_combined_registration_fails()
+    {
+        var engine = RecipeEngine.Create();
+        Assert.Throws<ArgumentException>(() =>
+            engine.RegisterStep<NoPublicConstructorValidatedStep, NoPublicConstructorValidator>());
+
+        engine.RegisterStep<NoPublicConstructorValidatedStep>();
+        var diagnostics = await engine.ValidateAsync(
+            RecipeBuilder.SingleStep("no-public-constructor-validated"),
+            cancellationToken: TestContext.Current.CancellationToken);
+
+        Assert.Empty(diagnostics);
+    }
+
+    [Fact]
     public void RegisterStep_rejects_invalid_validator_service_property_with_validator_message()
     {
         var exception = Assert.Throws<ArgumentException>(() =>
@@ -397,6 +423,26 @@ public sealed class TypedStepValidatorTests
 
         public ValueTask<IReadOnlyList<RecipeDiagnostic>> ValidateAsync(
             NoPublicConstructorValidatedStep step,
+            StepValidationContext context,
+            CancellationToken cancellationToken = default)
+        {
+            return ValueTask.FromResult<IReadOnlyList<RecipeDiagnostic>>([]);
+        }
+    }
+
+    [Step("struct-validated")]
+    private sealed class StructValidatedStep : IStep
+    {
+        public ValueTask ExecuteAsync(StepContext context, CancellationToken cancellationToken = default)
+        {
+            return ValueTask.CompletedTask;
+        }
+    }
+
+    private readonly struct StructValidator : IStepValidator<StructValidatedStep>
+    {
+        public ValueTask<IReadOnlyList<RecipeDiagnostic>> ValidateAsync(
+            StructValidatedStep step,
             StepValidationContext context,
             CancellationToken cancellationToken = default)
         {

@@ -30,8 +30,29 @@ public sealed class RecipeEngine
     public RecipeEngine RegisterStep<TStep, TValidator>()
         where TValidator : IStepValidator<TStep>
     {
-        _stepValidators[typeof(TStep)] = typeof(TValidator);
-        return RegisterStep<TStep>();
+        var stepType = typeof(TStep);
+        var validatorType = typeof(TValidator);
+        TypedStepDescriptorFactory.ValidateValidator(stepType, validatorType);
+
+        var hadPreviousValidator = _stepValidators.TryGetValue(stepType, out var previousValidator);
+        _stepValidators[stepType] = validatorType;
+        try
+        {
+            return RegisterStep<TStep>();
+        }
+        catch
+        {
+            if (hadPreviousValidator)
+            {
+                _stepValidators[stepType] = previousValidator!;
+            }
+            else
+            {
+                _stepValidators.Remove(stepType);
+            }
+
+            throw;
+        }
     }
 
     public RecipeEngine RegisterStepValidator<TStep, TValidator>()
