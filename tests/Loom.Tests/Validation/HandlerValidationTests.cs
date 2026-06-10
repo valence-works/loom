@@ -24,6 +24,7 @@ public sealed class HandlerValidationTests
     [Fact]
     public async Task ValidateAsync_preserves_direct_handler_validation_when_typed_validators_are_registered()
     {
+        UnusedTypedStepValidator.Calls = 0;
         var handler = new TestStepHandler(validate: (_, _) => [
             new RecipeDiagnostic(DiagnosticSeverity.Warning, "DIRECT_HANDLER", "direct handler")
         ]);

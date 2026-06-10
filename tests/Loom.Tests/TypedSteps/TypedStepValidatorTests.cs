@@ -113,6 +113,20 @@ public sealed class TypedStepValidatorTests
     }
 
     [Fact]
+    public async Task ValidateAsync_preserves_external_diagnostics_when_inline_validation_throws()
+    {
+        var engine = RecipeEngine.Create()
+            .RegisterStep<ExternalAndThrowingInlineStep, ExternalBeforeThrowingInlineValidator>();
+        var recipe = new Recipe("ordered-validation", [
+            new RecipeStep("external-and-throwing-inline", "step", JsonNode.Parse("""{"name":"value"}"""))
+        ]);
+
+        var diagnostics = await engine.ValidateAsync(recipe, cancellationToken: TestContext.Current.CancellationToken);
+
+        Assert.Equal(["EXTERNAL_BEFORE_THROW", "LOOM_TYPED_STEP_VALIDATION_FAILED"], diagnostics.Select(diagnostic => diagnostic.Code));
+    }
+
+    [Fact]
     public async Task RegisterStepsFromAssembly_discovers_step_validator_attribute()
     {
         AttributeNameValidator.Calls = 0;
@@ -159,6 +173,37 @@ public sealed class TypedStepValidatorTests
     }
 
     [Fact]
+    public void RegisterStep_rejects_null_step_validator_attribute_argument()
+    {
+        var exception = Assert.Throws<ArgumentNullException>(() => new StepValidatorAttribute(null!));
+
+        Assert.Equal("validatorType", exception.ParamName);
+    }
+
+    [Fact]
+    public void RegisterStep_rejects_validator_without_public_constructor_with_validator_message()
+    {
+        var exception = Assert.Throws<ArgumentException>(() =>
+            RecipeEngine.Create().RegisterStep<NoPublicConstructorValidatedStep, NoPublicConstructorValidator>());
+
+        Assert.Contains("Typed step validator", exception.Message, StringComparison.Ordinal);
+        Assert.Contains(nameof(NoPublicConstructorValidator), exception.Message, StringComparison.Ordinal);
+        Assert.Contains(nameof(NoPublicConstructorValidatedStep), exception.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void RegisterStep_rejects_invalid_validator_service_property_with_validator_message()
+    {
+        var exception = Assert.Throws<ArgumentException>(() =>
+            RecipeEngine.Create().RegisterStep<InvalidValidatorServicePropertyStep, InvalidValidatorServicePropertyValidator>());
+
+        Assert.Contains("Typed step validator", exception.Message, StringComparison.Ordinal);
+        Assert.Contains(nameof(InvalidValidatorServicePropertyValidator), exception.Message, StringComparison.Ordinal);
+        Assert.Contains(nameof(InvalidValidatorServicePropertyStep), exception.Message, StringComparison.Ordinal);
+        Assert.Contains(nameof(InvalidValidatorServicePropertyValidator.Recorder), exception.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public async Task ValidateAsync_reports_structured_diagnostic_when_external_validator_service_is_unavailable()
     {
         var engine = RecipeEngine.Create()
@@ -170,6 +215,7 @@ public sealed class TypedStepValidatorTests
         var diagnostic = Assert.Single(diagnostics);
         Assert.Equal("LOOM_TYPED_STEP_VALIDATOR_FAILED", diagnostic.Code);
         Assert.Equal("step:step", diagnostic.Target);
+        Assert.Contains("missing-service-validated", diagnostic.Message, StringComparison.Ordinal);
         Assert.Equal(nameof(InvalidOperationException), diagnostic.ExceptionSummary);
     }
 
@@ -185,6 +231,7 @@ public sealed class TypedStepValidatorTests
         var diagnostic = Assert.Single(diagnostics);
         Assert.Equal("LOOM_TYPED_STEP_VALIDATOR_FAILED", diagnostic.Code);
         Assert.Equal("step:step", diagnostic.Target);
+        Assert.Contains("throwing-external-validated", diagnostic.Message, StringComparison.Ordinal);
         Assert.Equal(nameof(InvalidOperationException), diagnostic.ExceptionSummary);
     }
 
@@ -299,6 +346,84 @@ public sealed class TypedStepValidatorTests
             return ValueTask.FromResult<IReadOnlyList<RecipeDiagnostic>>([
                 context.Warning("EXTERNAL_ORDER", "External validation ran.")
             ]);
+        }
+    }
+
+    [Step("external-and-throwing-inline")]
+    private sealed class ExternalAndThrowingInlineStep : IStep, IValidatingStep
+    {
+        public required string Name { get; init; }
+
+        public ValueTask<IReadOnlyList<RecipeDiagnostic>> ValidateAsync(
+            StepValidationContext context,
+            CancellationToken cancellationToken = default)
+        {
+            throw new InvalidOperationException("unsafe detail");
+        }
+
+        public ValueTask ExecuteAsync(StepContext context, CancellationToken cancellationToken = default)
+        {
+            return ValueTask.CompletedTask;
+        }
+    }
+
+    private sealed class ExternalBeforeThrowingInlineValidator : IStepValidator<ExternalAndThrowingInlineStep>
+    {
+        public ValueTask<IReadOnlyList<RecipeDiagnostic>> ValidateAsync(
+            ExternalAndThrowingInlineStep step,
+            StepValidationContext context,
+            CancellationToken cancellationToken = default)
+        {
+            return ValueTask.FromResult<IReadOnlyList<RecipeDiagnostic>>([
+                context.Warning("EXTERNAL_BEFORE_THROW", "External validation ran.")
+            ]);
+        }
+    }
+
+    [Step("no-public-constructor-validated")]
+    private sealed class NoPublicConstructorValidatedStep : IStep
+    {
+        public ValueTask ExecuteAsync(StepContext context, CancellationToken cancellationToken = default)
+        {
+            return ValueTask.CompletedTask;
+        }
+    }
+
+    private sealed class NoPublicConstructorValidator : IStepValidator<NoPublicConstructorValidatedStep>
+    {
+        private NoPublicConstructorValidator()
+        {
+        }
+
+        public ValueTask<IReadOnlyList<RecipeDiagnostic>> ValidateAsync(
+            NoPublicConstructorValidatedStep step,
+            StepValidationContext context,
+            CancellationToken cancellationToken = default)
+        {
+            return ValueTask.FromResult<IReadOnlyList<RecipeDiagnostic>>([]);
+        }
+    }
+
+    [Step("invalid-validator-service-property")]
+    private sealed class InvalidValidatorServicePropertyStep : IStep
+    {
+        public ValueTask ExecuteAsync(StepContext context, CancellationToken cancellationToken = default)
+        {
+            return ValueTask.CompletedTask;
+        }
+    }
+
+    private sealed class InvalidValidatorServicePropertyValidator : IStepValidator<InvalidValidatorServicePropertyStep>
+    {
+        [StepService]
+        public ConstructorRecorder? Recorder { get; }
+
+        public ValueTask<IReadOnlyList<RecipeDiagnostic>> ValidateAsync(
+            InvalidValidatorServicePropertyStep step,
+            StepValidationContext context,
+            CancellationToken cancellationToken = default)
+        {
+            return ValueTask.FromResult<IReadOnlyList<RecipeDiagnostic>>([]);
         }
     }
 

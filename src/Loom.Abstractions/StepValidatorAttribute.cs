@@ -1,7 +1,14 @@
 namespace Loom;
 
 [AttributeUsage(AttributeTargets.Class, AllowMultiple = false, Inherited = false)]
-public sealed class StepValidatorAttribute(Type validatorType) : Attribute
+public sealed class StepValidatorAttribute : Attribute
 {
-    public Type ValidatorType { get; } = validatorType;
+    public StepValidatorAttribute(Type validatorType)
+    {
+        ArgumentNullException.ThrowIfNull(validatorType);
+
+        ValidatorType = validatorType;
+    }
+
+    public Type ValidatorType { get; }
 }

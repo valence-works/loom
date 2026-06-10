@@ -168,8 +168,8 @@ internal static class TypedStepDescriptorFactory
             throw new ArgumentException($"Typed step validator '{validatorType.FullName}' must implement {contractType.FullName}.", nameof(validatorType));
         }
 
-        var constructor = GetConstructor(validatorType);
-        var serviceProperties = GetServiceProperties(validatorType);
+        var constructor = GetValidatorConstructor(stepType, validatorType);
+        var serviceProperties = GetValidatorServiceProperties(stepType, validatorType);
         return new TypedStepValidatorDescriptor(
             validatorType,
             constructor,
@@ -177,6 +177,35 @@ internal static class TypedStepDescriptorFactory
             CreateValidatorMethod
                 .MakeGenericMethod(stepType)
                 .CreateDelegate<Func<object, object, StepValidationContext, CancellationToken, ValueTask<IReadOnlyList<RecipeDiagnostic>>>>());
+    }
+
+    private static ConstructorInfo GetValidatorConstructor(Type stepType, Type validatorType)
+    {
+        var constructors = validatorType.GetConstructors(BindingFlags.Public | BindingFlags.Instance);
+        return constructors.Length switch
+        {
+            1 => constructors[0],
+            0 => throw new ArgumentException($"Typed step validator '{validatorType.FullName}' for typed step '{stepType.FullName}' must declare a public constructor.", nameof(validatorType)),
+            _ => throw new ArgumentException($"Typed step validator '{validatorType.FullName}' for typed step '{stepType.FullName}' must declare exactly one public constructor.", nameof(validatorType))
+        };
+    }
+
+    private static IReadOnlyList<TypedStepServiceProperty> GetValidatorServiceProperties(Type stepType, Type validatorType)
+    {
+        var serviceProperties = validatorType
+            .GetProperties(BindingFlags.Public | BindingFlags.Instance)
+            .Where(property => property.GetCustomAttribute<StepServiceAttribute>() is not null)
+            .ToArray();
+
+        foreach (var property in serviceProperties)
+        {
+            if (property.SetMethod?.IsPublic != true)
+            {
+                throw new ArgumentException($"Typed step validator '{validatorType.FullName}' for typed step '{stepType.FullName}' service property '{property.Name}' must be public and settable.", nameof(validatorType));
+            }
+        }
+
+        return serviceProperties.Select(property => new TypedStepServiceProperty(property)).ToArray();
     }
 
     private static async ValueTask<object?> CreateOutputExecutor<TOutput>(

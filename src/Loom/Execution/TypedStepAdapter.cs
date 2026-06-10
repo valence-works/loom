@@ -42,9 +42,11 @@ internal sealed class TypedStepAdapter(TypedStepDescriptor descriptor) : IRecipe
 
             if (hasInlineValidation)
             {
-                diagnostics.AddRange(await ((IValidatingStep)instance)
-                    .ValidateAsync(stepContext, cancellationToken)
-                    .ConfigureAwait(false));
+                diagnostics.AddRange(await ValidateInlineAsync(
+                    (IValidatingStep)instance,
+                    stepContext,
+                    step,
+                    cancellationToken).ConfigureAwait(false));
             }
 
             return diagnostics;
@@ -121,7 +123,27 @@ internal sealed class TypedStepAdapter(TypedStepDescriptor descriptor) : IRecipe
         {
             return [RecipeDiagnosticFactory.Error(
                 "LOOM_TYPED_STEP_VALIDATOR_FAILED",
-                $"Typed step validator '{validatorDescriptor.ValidatorType.FullName}' validation failed.",
+                $"Typed step validator '{validatorDescriptor.ValidatorType.FullName}' validation failed for recipe step type '{step.Type}'.",
+                Target(step),
+                exception)];
+        }
+    }
+
+    private static async ValueTask<IReadOnlyList<RecipeDiagnostic>> ValidateInlineAsync(
+        IValidatingStep validatingStep,
+        StepValidationContext context,
+        RecipeStep step,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            return await validatingStep.ValidateAsync(context, cancellationToken).ConfigureAwait(false);
+        }
+        catch (Exception exception) when (exception is not OperationCanceledException)
+        {
+            return [RecipeDiagnosticFactory.Error(
+                "LOOM_TYPED_STEP_VALIDATION_FAILED",
+                $"Typed step '{validatingStep.GetType().FullName}' validation failed.",
                 Target(step),
                 exception)];
         }
