@@ -96,6 +96,28 @@ public sealed class TypedStepBindingTests
         Assert.Equal(42, NumericInputStep.CapturedCount);
     }
 
+    [Fact]
+    public async Task Run_reports_resolved_input_binding_errors_before_service_resolution()
+    {
+        var recipe = new Recipe(
+            "invalid-resolved-input",
+            [new RecipeStep("service-numeric-input", "step", JsonNode.Parse("""{"count":"[js: variables('count')]"}"""))],
+            Variables: new Dictionary<string, JsonNode?>
+            {
+                ["count"] = JsonValue.Create("many")
+            });
+        var engine = RecipeEngine.Create()
+            .AddInterpolationProvider(new JintRecipeInterpolationProvider())
+            .RegisterStep<ServiceNumericInputStep>();
+
+        var result = await engine.RunAsync(recipe, cancellationToken: TestContext.Current.CancellationToken);
+
+        Assert.False(result.Succeeded);
+        Assert.Contains(result.Diagnostics, diagnostic =>
+            diagnostic.Code == "LOOM_TYPED_STEP_INPUT_INVALID" &&
+            diagnostic.Target == "step:step.input.count");
+    }
+
     [Step("required-input")]
     private sealed class RequiredInputStep : IStep
     {
@@ -119,6 +141,23 @@ public sealed class TypedStepBindingTests
             CapturedCount = Count;
             return ValueTask.CompletedTask;
         }
+    }
+
+    [Step("service-numeric-input")]
+    private sealed class ServiceNumericInputStep(IRecorder recorder) : IStep
+    {
+        public int Count { get; init; }
+
+        public ValueTask ExecuteAsync(StepContext context, CancellationToken cancellationToken = default)
+        {
+            recorder.Record(Count.ToString());
+            return ValueTask.CompletedTask;
+        }
+    }
+
+    private interface IRecorder
+    {
+        void Record(string value);
     }
 
     private static Recipe NumericInterpolationRecipe()

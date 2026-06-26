@@ -21,9 +21,9 @@ public sealed class RecipeEngine
     public RecipeEngine RegisterStep<TStep>()
     {
         var stepType = typeof(TStep);
-        var descriptor = TypedStepDescriptorFactory.Create(stepType, _stepValidators.GetValueOrDefault(stepType));
-        _handlers.Register(new TypedStepAdapter(descriptor));
-        _registeredTypedSteps[stepType] = descriptor.RecipeStepType;
+        var handler = TypedStepAuthoring.CreateHandler(stepType, _stepValidators.GetValueOrDefault(stepType));
+        _handlers.Register(handler);
+        _registeredTypedSteps[stepType] = handler.StepType;
         return this;
     }
 
@@ -32,7 +32,7 @@ public sealed class RecipeEngine
     {
         var stepType = typeof(TStep);
         var validatorType = typeof(TValidator);
-        TypedStepDescriptorFactory.ValidateValidator(stepType, validatorType);
+        TypedStepAuthoring.ValidateValidator(stepType, validatorType);
 
         var hadPreviousValidator = _stepValidators.TryGetValue(stepType, out var previousValidator);
         _stepValidators[stepType] = validatorType;
@@ -60,14 +60,14 @@ public sealed class RecipeEngine
     {
         var stepType = typeof(TStep);
         var validatorType = typeof(TValidator);
-        TypedStepDescriptorFactory.ValidateValidator(stepType, validatorType);
+        TypedStepAuthoring.ValidateValidator(stepType, validatorType);
         _stepValidators[stepType] = validatorType;
 
         if (_registeredTypedSteps.ContainsKey(stepType))
         {
-            var descriptor = TypedStepDescriptorFactory.Create(stepType, validatorType);
-            _handlers.Replace(new TypedStepAdapter(descriptor));
-            _registeredTypedSteps[stepType] = descriptor.RecipeStepType;
+            var handler = TypedStepAuthoring.CreateHandler(stepType, validatorType);
+            _handlers.Replace(handler);
+            _registeredTypedSteps[stepType] = handler.StepType;
         }
 
         return this;
@@ -75,10 +75,10 @@ public sealed class RecipeEngine
 
     public RecipeEngine RegisterStepsFromAssembly(Assembly assembly)
     {
-        foreach (var descriptor in TypedStepDescriptorFactory.CreateFromAssembly(assembly, _stepValidators))
+        foreach (var registration in TypedStepAuthoring.CreateRegistrationsFromAssembly(assembly, _stepValidators))
         {
-            _handlers.Register(new TypedStepAdapter(descriptor));
-            _registeredTypedSteps[descriptor.StepType] = descriptor.RecipeStepType;
+            _handlers.Register(registration.Handler);
+            _registeredTypedSteps[registration.StepType] = registration.Handler.StepType;
         }
 
         return this;
